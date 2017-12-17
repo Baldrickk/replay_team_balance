@@ -97,7 +97,7 @@ def get_matching_brackets_ord(input, open, close):
       opencount -=1
     if start and opencount == 0:
       end = i + 1
-      return input[start:end]
+      return input[start:end],input[end:]
 
 def grouper(iterable, n, fillvalue=None):
   "Collect data into fixed-length chunks or blocks"
@@ -116,14 +116,20 @@ def average_rating(teamdict):
   return total/total_count
 
 def load_json_from_replay(replay):
+  if replay in ('replay_last_battle.wotreplay','temp.wotreplay'): return (None, None)
   with open(dir+replay, 'rb') as r:
     r.read(11)
-    jsonstr = None
-    while jsonstr is None:
+    stdstr = None
+    while stdstr is None:
       dataline = r.readline()
-      jsonstr = get_matching_brackets_ord(dataline,'{','}')
-  jsonstr = jsonstr.decode('utf-8')
-  return json.loads(jsonstr)
+      stdstr, temp = get_matching_brackets_ord(dataline, '{','}')
+      temp = get_matching_brackets_ord(temp, '{','}')
+    std_data = json.loads(stdstr.decode('utf-8'))
+    try:
+      extended_data  = json.loads(temp[0].decode('utf-8'))
+    except:
+      extended_data = None
+  return std_data, extended_data
 
 def get_teams_from_replays(player_names_to_stat, player_ids_to_stat):
   teams = {'mine':{},'theirs':{}}
@@ -135,23 +141,30 @@ def get_teams_from_replays(player_names_to_stat, player_ids_to_stat):
       continue
     replay_string = f'\r{i} - {replay}'
     if len(replay_string) > max_str_len:
-      max_str_len = len(replay_string)
+      max_str_len = len(replay_string) + 1
     print (f'\r{i} - {replay}'.ljust(max_str_len), end="")
-    data = load_json_from_replay(replay)
+    data, ext_data = load_json_from_replay(replay)
     battleteams = [[],[]]
     myteam = None
-    for key, player in data['vehicles'].items():
-      team = int(player.get('team')) - 1
-      name = player.get('name')
-      playerName = data.get('playerName')
-      if name == playerName:
-        myteam = team
-      else:
-        battleteams[team].append(name)
-        if name not in cache:
-          player_names_to_stat.add(name)
-        elif not cache.get(name).get('rating'):
-          player_ids_to_stat.add(cache.get(name).get('id'))
+    if not data: continue
+    if ext_data:
+      for id, data in ext_data.get('players').items():
+        name = data.get('name')
+        if cache.get('name',{}).get('rating',None):
+          player_ids_to_stat.add(id)
+    else:
+      for key, player in data['vehicles'].items():
+        team = int(player.get('team')) - 1
+        name = player.get('name')
+        playerName = data.get('playerName')
+        if name == playerName:
+          myteam = team
+        else:
+          battleteams[team].append(name)
+          if name not in cache:
+            player_names_to_stat.add(name)
+          elif not cache.get(name).get('rating'):
+            player_ids_to_stat.add(cache.get(name).get('id'))
     if myteam is not None:
       for player in battleteams[myteam]:
         teams.get('mine')[player] = teams.get('mine').get(player, 0) + 1
@@ -184,6 +197,7 @@ elif not len(sys.argv) > 2:
   exit()
 dir = sys.argv[1].rstrip('/\\') + os.path.sep
 application_id = sys.argv[2]
+print(f'dir = {dir}\nappID = {application_id}')
 
 player_names_to_stat = set()
 player_ids_to_stat = set()
