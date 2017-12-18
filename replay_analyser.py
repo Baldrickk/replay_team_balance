@@ -181,28 +181,32 @@ def get_player_ratings(id_set):
   #  print(f'\r{id_list}'.ljust(1000), end = "")
     player_ratings_by_id_to_cache(id_list)
 
-if not len(sys.argv) > 1:
-  print ('need a dir name')
-  exit()
-elif not len(sys.argv) > 2:
-  print('need an application_id')
-  exit()
-dir = sys.argv[1].rstrip('/\\') + os.path.sep
-application_id = sys.argv[2]
-print(f'dir = {dir}\nappID = {application_id}')
+def main()
+    if not len(sys.argv) > 1:
+    print ('need a dir name')
+    exit()
+  elif not len(sys.argv) > 2:
+    print('need an application_id')
+    exit()
+  dir = sys.argv[1].rstrip('/\\') + os.path.sep
+  application_id = sys.argv[2]
+  print(f'dir = {dir}\nappID = {application_id}')
 
-player_names_to_stat = set()
-player_ids_to_stat = set()
-init_player_cache()
-teams = get_teams_from_replays(player_names_to_stat, player_ids_to_stat)
-get_player_ids(player_names_to_stat)
-get_player_ratings(player_ids_to_stat)
-cache_handle.close()
-write_clean_cache()
+  player_names_to_stat = set()
+  player_ids_to_stat = set()
+  init_player_cache()
+  teams = get_teams_from_replays(player_names_to_stat, player_ids_to_stat)
+  get_player_ids(player_names_to_stat)
+  get_player_ratings(player_ids_to_stat)
+  cache_handle.close()
+  write_clean_cache()
 
-averages = (average_rating(teams.get('mine')),
-            average_rating(teams.get('theirs')))
-print ("\nMy team's average rating:")
-print ('\t' + str(averages[0]))
-print ("The other team's average rating:")
-print ('\t' + str(averages[1]))
+  averages = (average_rating(teams.get('mine')),
+              average_rating(teams.get('theirs')))
+  print ("\nMy team's average rating:")
+  print ('\t' + str(averages[0]))
+  print ("The other team's average rating:")
+  print ('\t' + str(averages[1]))
+
+if __name__ == "__main__":
+    main()
