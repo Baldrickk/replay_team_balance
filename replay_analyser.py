@@ -118,17 +118,23 @@ def average_rating(teamdict):
 def load_json_from_replay(replay):
   if replay in ('replay_last_battle.wotreplay','temp.wotreplay'): return (None, None)
   with open(dir+replay, 'rb') as r:
-    r.read(11)
-    stdstr = None
-    while stdstr is None:
-      dataline = r.readline()
-      stdstr, temp = get_matching_brackets_ord(dataline, '{','}')
-      temp = get_matching_brackets_ord(temp, '{','}')
-    std_data = json.loads(stdstr.decode('utf-8'))
-    try:
-      extended_data  = json.loads(temp[0].decode('utf-8'))
-    except:
+    d = r.read(12)
+    print (d)
+    parts = d[4]
+    print (parts)
+    length = struct.unpack('<H', d[8:10])[0]
+    print (length)
+    std_data = json.loads(r.read(length).decode('utf-8'))
+    print(std_data)
+    if parts == 1:
       extended_data = None
+    else:
+      d = r.read(4)
+      print(d)
+      length = struct.unpack('<H', d[0:2])[0]
+      print(length)
+      extended_data = json.loads(r.read(length).decode('utf-8'))
+      print(extended_data)
   return std_data, extended_data
 
 def get_teams_from_replays(player_names_to_stat, player_ids_to_stat):
