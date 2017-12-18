@@ -85,20 +85,6 @@ def write_clean_cache():
     write_data_to_file_cache(player.get('name'), player.get('id'), player.get('rating'))
   cache_handle.close()
 
-def get_matching_brackets_ord(input, open, close):
-  opencount = 0
-  start = None
-  for i,char in enumerate(input):
-    if char == ord(open):
-      opencount +=1
-      if start is None:
-        start = i
-    elif char == ord(close) and opencount:
-      opencount -=1
-    if start and opencount == 0:
-      end = i + 1
-      return input[start:end],input[end:]
-
 def grouper(iterable, n, fillvalue=None):
   "Collect data into fixed-length chunks or blocks"
   # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
