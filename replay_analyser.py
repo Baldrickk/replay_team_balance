@@ -123,6 +123,41 @@ def load_json_from_replay(replay):
       extended_data = extract_json_data(d[0:4], r)[0]
   return std_data, extended_data
 
+def cache_player_ids(ext_data):
+  if ext_data:
+    for id, player_data in ext_data.get('players').items():
+      name = player_data.get('name')
+      if cache.get('name',{}).get('rating',None):
+        player_ids_to_stat.add(id)
+
+def sort_players_to_teams(json_data, player_names_to_stat, player_ids_to_stat):
+  battleteams = [[],[]]
+  myteam = None
+  data, ext_data = json_data
+  if not (json_data or data): return (None, None)
+  #cache player IDs if known
+  cache_player_ids(ext_data)
+  #add players to teams
+  for key, player in data['vehicles'].items():
+    team = int(player.get('team')) - 1
+    name = player.get('name')
+    playerName = data.get('playerName')
+    if name == playerName:
+      myteam = team
+    else:
+      battleteams[team].append(name)
+      if name not in cache:
+        player_names_to_stat.add(name)
+      elif not cache.get(name).get('rating'):
+        player_ids_to_stat.add(cache.get(name).get('id'))
+  return myteam, battleteams
+        
+def print_one_line(print_string, length = 0):
+  if len(print_string) > length:
+    length = len(print_string)
+  print ('\r' + print_string.ljust(length), end = '')
+  return length
+
 def get_teams_from_replays(directory):
   player_names_to_stat = set()
   player_ids_to_stat = set()
@@ -130,35 +165,16 @@ def get_teams_from_replays(directory):
   files = list(os.listdir(directory))
   max_str_len = 0
   print('reading replays:')
+  total_count = len(files)
   for i, replay in enumerate(files):
     if 'wotreplay' not in replay:
       continue
-    replay_string = f'\r{i} - {replay}'
-    if len(replay_string) > max_str_len:
-      max_str_len = len(replay_string) + 1
-    print (f'\r{i} - {replay}'.ljust(max_str_len), end="")
-    data, ext_data = load_json_from_replay(directory + replay)
-    battleteams = [[],[]]
-    myteam = None
-    if not data: continue
-    if ext_data:
-      for id, data in ext_data.get('players').items():
-        name = data.get('name')
-        if cache.get('name',{}).get('rating',None):
-          player_ids_to_stat.add(id)
-    else:
-      for key, player in data['vehicles'].items():
-        team = int(player.get('team')) - 1
-        name = player.get('name')
-        playerName = data.get('playerName')
-        if name == playerName:
-          myteam = team
-        else:
-          battleteams[team].append(name)
-          if name not in cache:
-            player_names_to_stat.add(name)
-          elif not cache.get(name).get('rating'):
-            player_ids_to_stat.add(cache.get(name).get('id'))
+    replay_string = f'{i+1}/{total_count} - {replay}'
+    max_str_len = print_one_line(replay_string, max_str_len)
+    json_data = load_json_from_replay(directory + replay)
+    
+    myteam, battleteams = sort_players_to_teams(json_data, player_names_to_stat, player_ids_to_stat)
+    
     if myteam is not None:
       for player in battleteams[myteam]:
         teams.get('mine')[player] = teams.get('mine').get(player, 0) + 1
@@ -169,10 +185,10 @@ def get_teams_from_replays(directory):
 def get_player_ids(name_set, player_ids_to_stat, application_id):
   print('\nGetting player IDs:')
   max_str_len = 0
-  for name in name_set:
-    if len(name) > max_str_len:
-      max_str_len = len(name) + 1
-    print (f'\r{name}'.ljust(max_str_len), end="")
+  total_count = len(name_set)
+  for i, name in enumerate(name_set):
+    name_string = f'{i+1}/{total_count} - {name}'
+    max_str_len = print_one_line(name_string)
     player_ids_to_stat.add(get_player_id_by_name(name, application_id))
 
 def get_player_ratings(id_set, application_id):
