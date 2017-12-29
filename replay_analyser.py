@@ -181,8 +181,8 @@ def get_player_ratings(id_set):
   #  print(f'\r{id_list}'.ljust(1000), end = "")
     player_ratings_by_id_to_cache(id_list)
 
-def main()
-    if not len(sys.argv) > 1:
+def main():
+  if not len(sys.argv) > 1:
     print ('need a dir name')
     exit()
   elif not len(sys.argv) > 2:
