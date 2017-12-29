@@ -6,6 +6,7 @@ import os
 import sys
 import itertools
 import struct
+import glob
 
 #globals
 cache_filename = 'cache.csv'
@@ -111,7 +112,6 @@ def extract_json_data(fmt_str, file_r):
   return data
 
 def load_json_from_replay(replay):
-  if replay in ('replay_last_battle.wotreplay','temp.wotreplay'): return (None, None)
   with open(replay, 'rb') as r:
     d = r.read(12)
     parts = d[4]
@@ -162,16 +162,16 @@ def get_teams_from_replays(directory):
   player_names_to_stat = set()
   player_ids_to_stat = set()
   teams = {'mine':{},'theirs':{}}
-  files = list(os.listdir(directory))
+  files = glob.glob(directory + os.path.sep + '20*.wotreplay')
   max_str_len = 0
   print('reading replays:')
   total_count = len(files)
   for i, replay in enumerate(files):
     if 'wotreplay' not in replay:
       continue
-    replay_string = f'{i+1}/{total_count} - {replay}'
+    replay_string = f'{i+1}/{total_count} - {replay.rsplit(os.path.sep,1)[1]}'
     max_str_len = print_one_line(replay_string, max_str_len)
-    json_data = load_json_from_replay(directory + replay)
+    json_data = load_json_from_replay(replay)
     
     myteam, battleteams = sort_players_to_teams(json_data, player_names_to_stat, player_ids_to_stat)
     
@@ -188,7 +188,7 @@ def get_player_ids(name_set, player_ids_to_stat, application_id):
   total_count = len(name_set)
   for i, name in enumerate(name_set):
     name_string = f'{i+1}/{total_count} - {name}'
-    max_str_len = print_one_line(name_string)
+    max_str_len = print_one_line(name_string, max_str_len)
     player_ids_to_stat.add(get_player_id_by_name(name, application_id))
 
 def get_player_ratings(id_set, application_id):
