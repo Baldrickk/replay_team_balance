@@ -5,33 +5,34 @@ import json
 import os
 import sys
 import itertools
+import struct
 
 #globals
 cache_filename = 'cache.csv'
 cache_handle = None
 cache = {}
 
-def get_player_id_data_by_name(name):
+def get_player_id_data_by_name(name, application_id):
   url = f'https://api.worldoftanks.eu/wot/account/list/?application_id={application_id}&search={name}&type=exact'
   return json.loads(requests.get(url).text)
 
-def get_player_id_by_name(name):
-  json_data = get_player_id_data_by_name(name)
+def get_player_id_by_name(name, application_id):
+  json_data = get_player_id_data_by_name(name, application_id)
   if not json_data.get('status') == 'ok':
     return
   id = json_data.get('data')[0].get('account_id') if json_data.get('meta').get('count') == 1 else 0
   write_data_to_cache(name, id, 0)
   return id
 
-def get_player_rating_data_by_id(id):
+def get_player_rating_data_by_id(id, application_id):
   id = str(id)
   url = f'https://api.worldoftanks.eu/wot/account/info/?application_id={application_id}&account_id={id}&fields=global_rating,nickname'
   return json.loads(requests.get(url).text)
 
-def player_ratings_by_id_to_cache(id_list):
+def player_ratings_by_id_to_cache(id_list, application_id):
   if not id_list:
     return
-  json_data = get_player_rating_data_by_id(id_list)
+  json_data = get_player_rating_data_by_id(id_list, application_id)
   if not (json_data.get('status') == 'ok' and json_data.get('meta').get('count') > 0):
     return
   data = json_data.get('data')
@@ -43,10 +44,10 @@ def player_ratings_by_id_to_cache(id_list):
     name = info.get('nickname')
     write_data_to_cache(name, id, rating)
 
-def get_player_rating_by_name(name):
+def get_player_rating_by_name(name, application_id):
   if name not in cache:
     id = get_player_id_by_name(name)
-    player_ratings_by_id_to_cache([str(id)])
+    player_ratings_by_id_to_cache([str(id)], application_id)
   rating = cache.get(name).get('rating')
   return rating
 
@@ -101,31 +102,32 @@ def average_rating(teamdict):
       total_count += count
   return total/total_count
 
+def extract_json_data(fmt_str, file_r):
+  if len(fmt_str) != 4:
+    raise ValueError("bad binary string length")
+  length = struct.unpack('<I', fmt_str)[0]
+  json_str = file_r.read(length).decode('utf-8')
+  data = json.loads(json_str)
+  return data
+
 def load_json_from_replay(replay):
   if replay in ('replay_last_battle.wotreplay','temp.wotreplay'): return (None, None)
-  with open(dir+replay, 'rb') as r:
+  with open(replay, 'rb') as r:
     d = r.read(12)
-    print (d)
     parts = d[4]
-    print (parts)
-    length = struct.unpack('<H', d[8:10])[0]
-    print (length)
-    std_data = json.loads(r.read(length).decode('utf-8'))
-    print(std_data)
+    std_data = extract_json_data(d[8:12], r)
     if parts == 1:
       extended_data = None
     else:
       d = r.read(4)
-      print(d)
-      length = struct.unpack('<H', d[0:2])[0]
-      print(length)
-      extended_data = json.loads(r.read(length).decode('utf-8'))
-      print(extended_data)
+      extended_data = extract_json_data(d[0:4], r)[0]
   return std_data, extended_data
 
-def get_teams_from_replays(player_names_to_stat, player_ids_to_stat):
+def get_teams_from_replays(directory):
+  player_names_to_stat = set()
+  player_ids_to_stat = set()
   teams = {'mine':{},'theirs':{}}
-  files = list(os.listdir(dir))
+  files = list(os.listdir(directory))
   max_str_len = 0
   print('reading replays:')
   for i, replay in enumerate(files):
@@ -135,7 +137,7 @@ def get_teams_from_replays(player_names_to_stat, player_ids_to_stat):
     if len(replay_string) > max_str_len:
       max_str_len = len(replay_string) + 1
     print (f'\r{i} - {replay}'.ljust(max_str_len), end="")
-    data, ext_data = load_json_from_replay(replay)
+    data, ext_data = load_json_from_replay(directory + replay)
     battleteams = [[],[]]
     myteam = None
     if not data: continue
@@ -162,42 +164,40 @@ def get_teams_from_replays(player_names_to_stat, player_ids_to_stat):
         teams.get('mine')[player] = teams.get('mine').get(player, 0) + 1
       for player in battleteams[1 - myteam]:
         teams.get('theirs')[player] = teams.get('theirs').get(player, 0) + 1
-  return teams
+  return teams, player_names_to_stat, player_ids_to_stat
 
-def get_player_ids(name_set):
+def get_player_ids(name_set, player_ids_to_stat, application_id):
   print('\nGetting player IDs:')
   max_str_len = 0
   for name in name_set:
     if len(name) > max_str_len:
       max_str_len = len(name) + 1
     print (f'\r{name}'.ljust(max_str_len), end="")
-    player_ids_to_stat.add(get_player_id_by_name(name))
+    player_ids_to_stat.add(get_player_id_by_name(name, application_id))
 
-def get_player_ratings(id_set):
+def get_player_ratings(id_set, application_id):
   print('\nGetting player stats:')
   id_groups = grouper(id_set, 100)
   for ids in id_groups:
     id_list = ','.join(str(id) for id in ids if id is not None)
   #  print(f'\r{id_list}'.ljust(1000), end = "")
-    player_ratings_by_id_to_cache(id_list)
+    player_ratings_by_id_to_cache(id_list, application_id)
 
 def main():
   if not len(sys.argv) > 1:
-    print ('need a dir name')
+    print ('need a directory name')
     exit()
   elif not len(sys.argv) > 2:
     print('need an application_id')
     exit()
-  dir = sys.argv[1].rstrip('/\\') + os.path.sep
+  directory = sys.argv[1].rstrip('/\\') + os.path.sep
   application_id = sys.argv[2]
-  print(f'dir = {dir}\nappID = {application_id}')
+  print(f'directory = {directory}\nappID = {application_id}')
 
-  player_names_to_stat = set()
-  player_ids_to_stat = set()
   init_player_cache()
-  teams = get_teams_from_replays(player_names_to_stat, player_ids_to_stat)
-  get_player_ids(player_names_to_stat)
-  get_player_ratings(player_ids_to_stat)
+  teams, player_names_to_stat, player_ids_to_stat = get_teams_from_replays(directory)
+  get_player_ids(player_names_to_stat, player_ids_to_stat, application_id)
+  get_player_ratings(player_ids_to_stat, application_id)
   cache_handle.close()
   write_clean_cache()
 
