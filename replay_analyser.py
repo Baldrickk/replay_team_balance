@@ -134,7 +134,9 @@ def sort_players_to_teams(json_data, player_names_to_stat, player_ids_to_stat):
   battleteams = [[],[]]
   myteam = None
   data, ext_data = json_data
-  if not (json_data or data): return (None, None)
+  if ((not (json_data or data)) or
+      (not len(data['vehicles']) == 30)): 
+    return (None, None)
   #cache player IDs if known
   cache_player_ids(ext_data)
   #add players to teams
