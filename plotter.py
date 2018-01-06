@@ -3,6 +3,9 @@ import glob
 import sys
 import os
 
+def round_to(x, nearest=1):
+    return int(nearest * round(float(x)/nearest))
+
 def get_teams_from_replays(directory):
   player_names_to_stat = set()
   player_ids_to_stat = set()
@@ -32,7 +35,7 @@ def main():
   elif not len(sys.argv) > 2:
     print('need an application_id')
     exit()
-  elif not len(sys.argv) > 3L
+  elif not len(sys.argv) > 3:
     print('need an output filename')
     exit()
   directory = sys.argv[1].rstrip('/\\') + os.path.sep
@@ -46,7 +49,8 @@ def main():
   RA.cache_handle.close()
   RA.write_clean_cache()
 
-  with open(argv[3], 'w') as outfile:
+  with open(sys.argv[3].rsplit(',',1)[0] + '.csv', 'w') as outfile:
+    buckets = {}
     for teamlists in zip(teams.get('mine'), teams.get('theirs')):
       total_mine = float(0)
       total_theirs = float(0)
@@ -63,6 +67,12 @@ def main():
       average_mine = total_mine / count_mine
       average_theirs = total_theirs / count_theirs
       outfile.write(f'{average_mine},{average_theirs}\n')
+      pc_difference = ((average_theirs - average_mine) / average_mine) * 100
+      bucket = round_to(pc_difference, 5)
+      buckets[bucket] = buckets.get(bucket, 0) + 1
+  with open(sys.argv[3].rsplit('.',1)[0] + '.buckets.csv', 'w') as outfile:
+    for bucket, count in sorted(buckets.items()):
+      outfile.write(f'{bucket},{count}\n')
   print ('done')
 
 main()

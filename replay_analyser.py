@@ -108,7 +108,10 @@ def extract_json_data(fmt_str, file_r):
     raise ValueError("bad binary string length")
   length = struct.unpack('<I', fmt_str)[0]
   json_str = file_r.read(length).decode('utf-8')
-  data = json.loads(json_str)
+  try:
+    data = json.loads(json_str)
+  except:
+    return None
   return data
 
 def load_json_from_replay(replay):
@@ -116,6 +119,8 @@ def load_json_from_replay(replay):
     d = r.read(12)
     parts = d[4]
     std_data = extract_json_data(d[8:12], r)
+    if not std_data:
+      return None
     if parts == 1:
       extended_data = None
     else:
@@ -125,7 +130,7 @@ def load_json_from_replay(replay):
 
 def cache_player_ids(ext_data):
   if ext_data:
-    for id, player_data in ext_data.get('players').items():
+    for id, player_data in ext_data.get('players',{}).items():
       name = player_data.get('name')
       if cache.get('name',{}).get('rating',None):
         player_ids_to_stat.add(id)
@@ -174,6 +179,8 @@ def get_teams_from_replays(directory):
     replay_string = f'{i+1}/{total_count} - {replay.rsplit(os.path.sep,1)[1]}'
     max_str_len = print_one_line(replay_string, max_str_len)
     json_data = load_json_from_replay(replay)
+    if not json_data:
+      continue
     
     myteam, battleteams = sort_players_to_teams(json_data, player_names_to_stat, player_ids_to_stat)
     
