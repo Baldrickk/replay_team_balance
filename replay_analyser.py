@@ -138,25 +138,24 @@ def cache_player_ids(ext_data):
 def sort_players_to_teams(json_data, player_names_to_stat, player_ids_to_stat):
   battleteams = [[],[]]
   myteam = None
-  data, ext_data = json_data
-  if ((not (json_data or data)) or
-      (not len(data['vehicles']) == 30)): 
-    return (None, None)
-  #cache player IDs if known
-  cache_player_ids(ext_data)
-  #add players to teams
-  for key, player in data['vehicles'].items():
-    team = int(player.get('team')) - 1
-    name = player.get('name')
-    playerName = data.get('playerName')
-    if name == playerName:
-      myteam = team
-    else:
-      battleteams[team].append(name)
-      if name not in cache:
-        player_names_to_stat.add(name)
-      elif not cache.get(name).get('rating'):
-        player_ids_to_stat.add(cache.get(name).get('id'))
+ 
+  data, ext_data = json_data if json_data else (None, None)
+  if data and len(data['vehicles']) == 30:
+    #cache player IDs if known
+    cache_player_ids(ext_data)
+    #add players to teams
+    for key, player in data['vehicles'].items():
+      team = int(player.get('team')) - 1
+      name = player.get('name')
+      playerName = data.get('playerName')
+      if name == playerName:
+        myteam = team
+      else:
+        battleteams[team].append(name)
+        if name not in cache:
+          player_names_to_stat.add(name)
+        elif not cache.get(name).get('rating'):
+          player_ids_to_stat.add(cache.get(name).get('id'))
   return myteam, battleteams
         
 def print_one_line(print_string, length = 0):
@@ -183,7 +182,7 @@ def get_teams_from_replays(directory):
       continue
     
     myteam, battleteams = sort_players_to_teams(json_data, player_names_to_stat, player_ids_to_stat)
-    
+
     if myteam is not None:
       for player in battleteams[myteam]:
         teams.get('mine')[player] = teams.get('mine').get(player, 0) + 1

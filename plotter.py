@@ -15,8 +15,6 @@ def get_teams_from_replays(directory):
   print('reading replays:')
   total_count = len(files)
   for i, replay in enumerate(files):
-    if 'wotreplay' not in replay:
-      continue
     replay_string = f'{i+1}/{total_count} - {replay.rsplit(os.path.sep,1)[1]}'
     max_str_len = RA.print_one_line(replay_string, max_str_len)
     json_data = RA.load_json_from_replay(replay)
@@ -51,6 +49,7 @@ def main():
 
   with open(sys.argv[3].rsplit(',',1)[0] + '.csv', 'w') as outfile:
     buckets = {}
+    print (f'teamcount = {len(teams.get("mine"))}')
     for teamlists in zip(teams.get('mine'), teams.get('theirs')):
       total_mine = float(0)
       total_theirs = float(0)
@@ -64,12 +63,13 @@ def main():
         if player in RA.cache:
           total_theirs += RA.cache.get(player).get('rating')
           count_theirs +=1 
-      average_mine = total_mine / count_mine
-      average_theirs = total_theirs / count_theirs
-      outfile.write(f'{average_mine},{average_theirs}\n')
-      pc_difference = ((average_theirs - average_mine) / average_mine) * 100
-      bucket = round_to(pc_difference, 5)
-      buckets[bucket] = buckets.get(bucket, 0) + 1
+      if total_mine and total_theirs and count_mine and count_theirs:
+        average_mine = total_mine / count_mine
+        average_theirs = total_theirs / count_theirs
+        outfile.write(f'{average_mine},{average_theirs}\n')
+        pc_difference = ((average_theirs - average_mine) / average_mine) * 100
+        bucket = round_to(pc_difference, 5)
+        buckets[bucket] = buckets.get(bucket, 0) + 1
   with open(sys.argv[3].rsplit('.',1)[0] + '.buckets.csv', 'w') as outfile:
     for bucket, count in sorted(buckets.items()):
       outfile.write(f'{bucket},{count}\n')
