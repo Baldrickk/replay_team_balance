@@ -67,7 +67,7 @@ def main():
         average_mine = total_mine / count_mine
         average_theirs = total_theirs / count_theirs
         outfile.write(f'{average_mine},{average_theirs}\n')
-        pc_difference = ((average_theirs - average_mine) / average_mine) * 100
+        pc_difference = ((average_mine - average_theirs) / average_mine) * 100
         bucket = round_to(pc_difference, 5)
         buckets[bucket] = buckets.get(bucket, 0) + 1
   with open(sys.argv[3].rsplit('.',1)[0] + '.buckets.csv', 'w') as outfile:
