@@ -9,17 +9,22 @@ class API:
   def json_from_url(self, url):
     return json.loads(requests.get(url).text)
   
-  def get_tank_tiers():
-    url = f'https://api.worldoftanks.eu/wot/account/list/?application_id={self.application_id}&search={name}&type=exact'
-    tank_db = json.loads(requests.get(url).text)
-    tanks = tanks_db.get('data')
-    return tankdata
-    for i, tank in tanks.items():
-      name = tank.get('tag')
-      tier = tank.get('tier')
-      nation = tank.get('nation')
-      tankdata[name] = (name, tier, nation)
-    return tankdata
+def get_tank_tiers(self):
+  application_id = 'f9f772382b14bf0bad8b14d2d5dfd852'
+  url_str = 'https://api.worldoftanks.eu/wot/encyclopedia/vehicles/?application_id={}&fields=type,short_name,tier,tag&page_no={}'
+  page_number = 1
+  page_count = 1
+  tank_db = {}
+  while page_number <= page_count:
+    url = url_str.format(self.application_id, page_number)
+    json_data = json.loads(requests.get(url).text)
+    if not json_data.get('status') == 'ok':
+      break
+    page_count = json_data.get('meta').get('count')
+    page_number += 1
+    tank_dict = {tank_data.get('tag'):tank_data for tank_data in json_data.get('data').values()}
+    tank_db.update(tank_dict)
+  return tank_db
 
   def id_from_name(self, ols, idx, count, name):
     ols.print(f'{idx}/{count}:{name}')
