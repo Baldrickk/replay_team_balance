@@ -207,7 +207,7 @@ def get_player_ratings(id_set, application_id):
   #  print(f'\r{id_list}'.ljust(1000), end = "")
     player_ratings_by_id_to_cache(id_list, application_id)
 
-def cache_players_from_replays()
+def cache_players_from_replays():
   init_player_cache()
   teams, player_names_to_stat, player_ids_to_stat = get_teams_from_replays(directory)
   get_player_ids(player_names_to_stat, player_ids_to_stat, application_id)
