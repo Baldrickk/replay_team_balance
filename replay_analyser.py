@@ -4,6 +4,7 @@ from utils import OverWriter as OW
 from replay_parser import ReplayParser as RP
 from api import API
 from cache import PlayerCache as PC
+from time import sleep
 
 
 def names_ids_to_get(replays, cache):
@@ -17,7 +18,7 @@ def names_ids_to_get(replays, cache):
                 continue
             if len(battle) == 1:
                 names_to_id.add(name)
-            else:
+            elif len(battle) > 1:
                 player_id = battle[1].get('vehicles').get(vehicle)[0].get('accountDBID')
                 ids_to_stat.add(player_id)
     return names_to_id, ids_to_stat
@@ -37,8 +38,8 @@ def main():
     if not len(sys.argv) == 3:
         print('Usage = replay_analyser.py replay_path application_id')
         exit()
-    with OW() as ow, PC('cache.csv') as cache:
-        rp = RP('./testreplays/', ow)
+    with OW(sys.stderr) as ow, PC('cache.csv') as cache:
+        rp = RP(sys.argv[1], ow)
         a = API('f9f772382b14bf0bad8b14d2d5dfd852', ow)
         replays = rp.read_replays()
         cache_players(replays, cache, a)

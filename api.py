@@ -62,6 +62,7 @@ class API:
                    f'application_id={self.application_id}&'
                    f'account_id={ids}&'
                    'fields=global_rating,nickname')
+            self.ow.print('Getting Player ratings')
             data = self.json_from_url(url)
             if not data.get('status') == 'ok':
                 continue

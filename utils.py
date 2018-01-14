@@ -12,16 +12,10 @@ class OverWriter:
     def __exit__(self, type, value, traceback):
         self.close()
 
-    def _print(self, print_string, start_char):
+    def print(self, print_string):
         if len(print_string) > self.length:
             self.length = len(print_string)
-        print(start_char + print_string.ljust(self.length), end='', file=self.output, flush=True)
-
-    def print_over(self, print_string):
-        self._print(print_string, '\r')
-
-    def print_line(self, print_string):
-        self._print(print_string, '\n')
+        print('\r' + print_string.ljust(self.length), end='', file=self.output, flush=True)
 
     @staticmethod
     def close():
