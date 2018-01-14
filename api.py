@@ -1,19 +1,18 @@
-from utils import one_line_string
 import itertools
 import json
 import requests
 
 
 class API:
-    def __init__(self, application_id):
+    def __init__(self, application_id, over_writer):
         self.application_id = application_id
+        self.ow = over_writer
 
     @staticmethod
     def json_from_url(url):
         return json.loads(requests.get(url).text)
 
     def tank_tiers(self):
-        ols = one_line_string()
         url_str = ('https://api.worldoftanks.eu/wot/encyclopedia/vehicles/?'
                    'application_id={}&'
                    'fields=type,short_name,tier,tag&'
@@ -27,28 +26,26 @@ class API:
             if not json_data.get('status') == 'ok':
                 break
             page_count = json_data.get('meta').get('count')
-            ols.print(f'Getting tank tiers, page {page_number}/{page_count}')
+            self.ow.print(f'Getting tank tiers, page {page_number}/{page_count}')
             page_number += 1
             tank_dict = {tank_data.get('tag'):tank_data for tank_data in json_data.get('data').values()}
             tank_db.update(tank_dict)
         return tank_db
 
-    def id_from_name(self, ols, idx, count, name):
-        ols.print(f'Getting player ID: {idx}/{count}:{name}')
+    def id_from_name(self, idx, count, name):
+        self.ow.print(f'Getting player ID: {idx}/{count}:{name}')
         url = ('https://api.worldoftanks.eu/wot/account/list/?type=exact'
                f'&application_id={self.application_id}'
                f'&search={name}')
         data = self.json_from_url(url)
         ok = (data.get('status') == 'ok' and
               data.get('meta').get('count') > 0)
-        id = data.get('data')[0].get('account_id') if ok else 0
-        return id
+        acc_id = data.get('data')[0].get('account_id') if ok else 0
+        return acc_id
 
     def ids_from_names(self, name_iter):
-        print('Getting player IDs')
-        with one_line_string() as ols:
-            ids = (self.id_from_name(ols, idx+1, len(name_iter), name)
-                   for idx, name in enumerate(name_iter))
+        ids = (self.id_from_name(idx+1, len(name_iter), name)
+               for idx, name in enumerate(name_iter))
         return ids
 
     @staticmethod
@@ -58,7 +55,7 @@ class API:
         args = [iter(iterable)] * n
         return itertools.zip_longest(*args, fillvalue=fillvalue)
 
-    def player_ratings_from_ids(self, id_iter):
+    def ratings_from_ids(self, id_iter):
         for i, group in enumerate(self.grouper(id_iter, 100, '')):
             ids = ','.join(str(player_id) for player_id in group)
             url = ('https://api.worldoftanks.eu/wot/account/info/?'
@@ -69,7 +66,8 @@ class API:
             if not data.get('status') == 'ok':
                 continue
             else:
-                for player in data.get('data').values():
+                for player_id, player in data.get('data').items():
+                    player['id'] = player_id
                     yield player
 
 
