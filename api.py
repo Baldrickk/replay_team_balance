@@ -68,6 +68,8 @@ class API:
                 continue
             else:
                 for player_id, player in data.get('data').items():
+                    if not player:
+                        continue
                     player['id'] = player_id
                     yield player
 

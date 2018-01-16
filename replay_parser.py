@@ -24,18 +24,20 @@ class ReplayParser:
 
     def _load_json_from_replay(self, replay):
         with open(replay, 'rb') as r:
-            data = []
+            data = dict()
             d = r.read(12)
             parts = d[4]
-            data.append(self._extract_json_data(d[8:12], r))
-            if not data[0]:
+            json_data = self._extract_json_data(d[8:12], r)
+            if json_data:
+                data['std'] = json_data
+            else:
                 return None
             # bootcamp replays are bugged.  forcibly ignore them here:
-            if data[0].get('bootcampCtx'):
+            if json_data.get('bootcampCtx'):
                 return None
             if parts == 2:
                 d = r.read(4)
-                data.extend(self._extract_json_data(d[0:4], r))
+                data['ext'] = self._extract_json_data(d[0:4], r)
         return data
 
     def read_replays(self):
@@ -44,5 +46,5 @@ class ReplayParser:
             self.ow.print(f'{i+1}/{len(files)} - {replay}')
             json_data = self._load_json_from_replay(replay)
             if json_data:
-                self.replays.append(list(json_data))
+                self.replays.append(json_data)
         return self.replays
