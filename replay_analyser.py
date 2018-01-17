@@ -106,18 +106,22 @@ def team_averages(team_ratings):
 
 
 def outputs(replays, team_ratings):
+    if not replays:
+        return
     team_averages(team_ratings)
     output_xy(team_ratings)
     output_histogram(team_ratings)
 
 
 def main():
-    if not len(sys.argv) == 3:
-        print('Usage = replay_analyser.py replay_path application_id')
+    if len(sys.argv) < 2:
+        print('Usage = replay_analyser.py replay_path [application_id]')
         exit()
+    replay_dir = sys.argv[1]
+    api_key = sys.argv[2] if len(sys.argv) >= 3 else '48cef51dca87be6a244bd55566907d56'
     with OW(sys.stderr) as ow, PC('cache.csv') as cache:
-        rp = RP(sys.argv[1], ow)
-        a = API(sys.argv[2], ow)
+        rp = RP(replay_dir, ow)
+        a = API(api_key, ow)
         replays = rp.read_replays()
         cache_players(replays, cache, a)
         team_ratings = team_average_ratings(replays, cache)
