@@ -1,12 +1,13 @@
 #!/usr/bin/python3
-import sys
 from utils import OverWriter as OW
 from replay_parser import ReplayParser as RP
 from api import API
 from cache import PlayerCache as PC
-from statistics import mean
-
-import code
+from statistics import mean, pstdev
+import matplotlib.pyplot as plt
+import matplotlib.mlab as mlab
+import numpy as np
+import sys
 
 
 def names_ids_to_get(replays, cache):
@@ -43,27 +44,68 @@ def team_average_ratings(replays, cache):
     for battle in replays:
         teams = [[], []]
         std = battle.get('std')
+        if len(std.get('vehicles')) < 30:
+            continue
         for player in std.get('vehicles').values():
             name = player.get('name')
             cached_player = cache.cached_player(name)
             if cached_player:
-                rating = int(cached_player.get('global_rating'))
-                team_num = player.get('team') - 1 # 1-indexed -> 0-indexed
+                rating = float(cached_player.get('global_rating'))
+                team_num = player.get('team') - 1  # 1-indexed -> 0-indexed
                 if name == std.get('playerName'):
                     # note player's team and eliminate them from the calculation
                     replay_team = team_num
                 else:
                     teams[team_num].append(rating)
-        team_ratings.append({'green': mean(teams[replay_team]),
-                             'red': mean(teams[1 - replay_team])})
+        team_ratings.append({'green team': mean(teams[replay_team]),
+                             'red team': mean(teams[1 - replay_team])})
     return team_ratings
 
 
-def temp():
-    a_list = [[], []]
-    value = int(5)
-    a_list[1].append(value)
-    print(a_list)
+def output_xy(team_ratings):
+    plt.plot([0, 8000], [0, 8000], 'red')
+    plt.scatter([x['red team'] for x in team_ratings],
+                [y['green team'] for y in team_ratings],
+                color='blue',
+                marker='x', s=1,
+                label='green / red')
+    plt.xlabel('rating: red team')
+    plt.ylabel('rating: green team')
+    plt.title("Average team rating distribution")
+    plt.show()
+
+
+def percent_diff(a, b):
+    return 100*(float(a)-float(b))/float(a)
+
+
+def output_histogram(team_ratings):
+    bin_size = 3
+    p_diffs = [percent_diff(b.get('green team'), b.get('red team')) for b in team_ratings]
+    sigma = pstdev(p_diffs)
+    mu = mean(p_diffs)
+    plt.hist(p_diffs, range(-100, 101, bin_size), rwidth=0.9, normed=True)
+    x = np.array(range(-100,101))
+    y = mlab.normpdf(x, mu, sigma)
+    plt.plot(x, y, '--')
+    plt.xlabel('percentage difference')
+    plt.ylabel('frequency')
+    plt.title("Histogram of team rating differences")
+    plt.show()
+
+
+def team_averages(team_ratings):
+    g = mean(t.get('green team') for t in team_ratings)
+    r = mean(t.get('red team') for t in team_ratings)
+    print(f'\nGreen team average rating:\n\t\t\t{g:.6}'
+          f'\nRed team average rating:\n\t\t\t{r:.6}'
+          f'\nPercentage difference:\n\t\t\t{percent_diff(g, r):+.3}%')
+
+
+def outputs(replays, team_ratings):
+    team_averages(team_ratings)
+    output_xy(team_ratings)
+    output_histogram(team_ratings)
 
 
 def main():
@@ -76,9 +118,7 @@ def main():
         replays = rp.read_replays()
         cache_players(replays, cache, a)
         team_ratings = team_average_ratings(replays, cache)
-
-        # code.interact(local=locals())
-
+    outputs(replays, team_ratings)
 
 
 if __name__ == "__main__":

@@ -10,12 +10,13 @@ https://www.python.org/ftp/python/3.6.4/python-3.6.4-amd64-webinstall.exe
 When you install, ensure you select the "add to path" option (will be something like that) I think it is on the first page of the installer, otherwise you'll have to set it up manually, which is a pain.
 
 
-2. Install the requests library.
+2. Install the required libraries.
 
 Open a new Cmd or PowerShell window.
 Assuming path is correctly set up, just run:
 
-<i>pip install requests</i>
+<i>pip install requests</i><br>
+<i>pip install matplotlib</i>
 
  
 3. Get yourself an application ID from wargaming.
@@ -30,7 +31,7 @@ This lets you make non-rate limited API queries
 Download https://github.com/B...hive/master.zip and unpack to a directory of your choice.
 
  
-5 Run the code
+5. Run the code
 
 In a Cmd or Powershell terminal, navigate to the directory where the unpacked code is
 
