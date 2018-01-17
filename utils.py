@@ -2,7 +2,7 @@ import sys
 
 
 class OverWriter:
-    def __init__(self, output=sys.stdout):
+    def __init__(self, output=sys.stderr):
         self.length = 0
         self.output = output
 
