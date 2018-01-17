@@ -39,7 +39,8 @@ class ReplayParser:
             # Forcibly ignore them here:
             if (len(json_data.get('vehicles')) < 30 or
                     json_data.get('regionCode') == 'CT' or
-                    json_data.get('bootcampCtx')):
+                    json_data.get('bootcampCtx') or
+                    json_data.get('gameplayID') == 'sandbox'):
                 return None
             if parts == 2:
                 d = r.read(4)
