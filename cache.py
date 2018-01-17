@@ -18,6 +18,7 @@ class PlayerCache:
             pass
         self.cache_handle = open(filename, 'a', newline='')
         self.writer = csv.DictWriter(self.cache_handle, field_names)
+        self.cache_handle.flush()
 
     def __enter__(self):
         return self
