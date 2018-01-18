@@ -13,8 +13,7 @@ class OverWriter:
         self.close()
 
     def print(self, print_string):
-        if len(print_string) > self.length:
-            self.length = len(print_string)
+        self.length = max(self.length, len(print_string))
         print('\r' + print_string.ljust(self.length), end='', file=self.output, flush=True)
 
     @staticmethod

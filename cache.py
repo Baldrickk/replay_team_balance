@@ -2,13 +2,14 @@ import csv
 
 
 class PlayerCache:
-    def __init__(self, filename):
+    def __init__(self, filename, field_names):
         self.filename = filename
         self.data = {}
         self.names_to_id = set()
         self.ids_to_stat = set()
         self.cache_handle = None
-        field_names = ['nickname', 'id', 'global_rating']
+        self.key = field_names[0]
+        self.field_names = field_names
         try:
             with open(filename, 'r') as file:
                 for row in csv.DictReader(file, field_names):
@@ -26,12 +27,12 @@ class PlayerCache:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close_cache()
 
-    def add_to_cache(self, player):
-        if self.cache_handle and self.data.get(player.get('nickname')) is None:
-            self.writer.writerow(player)
-        self.data[player.get('nickname')] = player
+    def add_to_cache(self, record):
+        if self.cache_handle and self.data.get(record.get(self.key)) is None:
+            self.writer.writerow(record)
+        self.data[record.get(self.key)] = record
 
-    def cached_player(self, name):
+    def cached_record(self, name):
         return self.data.get(name)
 
     def close_cache(self):

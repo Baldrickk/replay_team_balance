@@ -16,10 +16,7 @@ class ReplayParser:
             raise ValueError("bad binary string length")
         length = struct.unpack('<I', bin_str)[0]
         json_str = file_r.read(length).decode('utf-8')
-        # try:
         data = json.loads(json_str)
-        # except:
-        #    return None
         return data
 
     def _load_json_from_replay(self, replay):
@@ -36,17 +33,16 @@ class ReplayParser:
             else:
                 return None
             # Some replays are bugged or don't work.
-            # Forcibly ignore them here:
-            if (len(json_data.get('vehicles')) < 30 or
-                    json_data.get('regionCode') == 'CT' or
-                    json_data.get('bootcampCtx') or
-                    json_data.get('gameplayID') == 'sandbox'):
+            # Forcibly ignore them here
+            if (len(json_data.get('vehicles')) < 30 or          # not full team
+                    json_data.get('regionCode') == 'CT' or      # test server
+                    json_data.get('bootcampCtx') or             # tutorial
+                    json_data.get('gameplayID') == 'sandbox'):  # proving grounds
                 return None
             if parts == 2:
                 d = r.read(4)
                 data['ext'] = self._extract_json_data(d[0:4], r)
         return data
-
 
     def read_replays(self):
         files = glob.glob(self.directory + os.path.sep + '*wotreplay')
