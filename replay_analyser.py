@@ -4,6 +4,7 @@ from replay_parser import ReplayParser as RP
 from api import API
 from cache import PlayerCache as PC
 from statistics import mean, pstdev
+from collections import defaultdict
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 import numpy as np
@@ -99,19 +100,40 @@ def percent_diff(a, b):
     return 100*(float(a)-float(b))/float(a)
 
 
-def output_histogram(team_ratings):
-    bin_size = 3
+def output_rating_histogram(team_ratings):
     p_diffs = [percent_diff(b.get('green team'), b.get('red team')) for b in team_ratings]
-    sigma = pstdev(p_diffs)
-    mu = mean(p_diffs)
-    plt.hist(p_diffs, range(-100, 101, bin_size), rwidth=0.9, normed=True)
-    x = np.array(range(-100, 101))
-    y = mlab.normpdf(x, mu, sigma)
-    plt.plot(x, y, '--')
-    plt.xlabel('percentage difference')
-    plt.ylabel('frequency')
-    plt.title("Histogram of team rating differences")
+    output_histogram(p_diffs, -100, 100, 3,
+                     'percentage difference',
+                     'frequency',
+                     'Histogram of team rating differences')
+
+
+def output_histogram(data, min, max, bin_size, xlabel, ylabel, title):
+    sigma = pstdev(data)
+    mu = mean(data)
+    plt.hist(data, range(min, max+1, bin_size), rwidth=0.9, normed=True)
+    plt.plot(range(min, max+1), mlab.normpdf(np.array(range(min, max+1)), mu, sigma), '--')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
     plt.show()
+
+
+def output_score_histogram(replays):
+    results = []
+    for battle in replays:
+        team_score = [0, 0]
+        extended = battle.get('ext')
+        if not extended:
+            continue
+        for tank in extended[0].get('vehicles').values():
+            tank = tank[0]
+            alive = tank.get('health') > 0
+            if alive:
+                team = tank.get('team') - 1
+                team_score[team] += 1
+        results.append(abs(team_score[1]-team_score[0]))
+    output_histogram(results, 0, 15, 1, 'difference in score', 'count', 'Distribution of results')
 
 
 def team_averages(team_ratings):
@@ -128,7 +150,8 @@ def outputs(replays, team_ratings):
         return
     team_averages(team_ratings)
     output_xy(replays, team_ratings)
-    output_histogram(team_ratings)
+    output_rating_histogram(team_ratings)
+    output_score_histogram(replays)
 
 
 def main():
