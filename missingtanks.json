@@ -1,0 +1,17 @@
+{
+  "F74_AMX_M4_1949_Liberte": {
+    "tier": 8,
+    "tag": "F74_AMX_M4_1949_Liberte",
+    "short_name": "AMX M4 49 Liberte"
+  },
+  "G92_VK7201P": {
+    "tier": 10,
+    "tag": "G92_VK7201P",
+    "short_name": "VK 7201 P"
+  },
+  "A84_M48A1": {
+    "tier": 10,
+    "tag": "A84_M48A1",
+    "short_name": "M48A1"
+    }
+}

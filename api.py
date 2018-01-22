@@ -13,19 +13,21 @@ class API:
         return json.loads(requests.get(url).text)
 
     def tank_tiers(self):
+        with open('missingtanks.json') as missing:
+            tank_db = json.load(missing)
         url_str = ('https://api.worldoftanks.eu/wot/encyclopedia/vehicles/?'
                    'application_id={}&'
                    'fields=type,short_name,tier,tag&'
                    'page_no={}')
         page_number = 1
-        page_count = 1
-        tank_db = {}
+        page_count = page_number + 1
         while page_number <= page_count:
             url = url_str.format(self.application_id, page_number)
             json_data = json.loads(requests.get(url).text)
             if not json_data.get('status') == 'ok':
                 break
-            page_count = json_data.get('meta').get('count')
+            page_count = json_data.get('meta').get('page_total')
+            page_number = json_data.get('meta').get('page')
             self.ow.print(f'Getting tank tiers, page {page_number}/{page_count}')
             page_number += 1
             tank_dict = {tank_data.get('tag'):tank_data for tank_data in json_data.get('data').values()}

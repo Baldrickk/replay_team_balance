@@ -15,11 +15,13 @@ When you install, ensure you select the "add to path" option (will be something 
 Open a new Cmd or PowerShell window.
 Assuming path is correctly set up, just run:
 
-<i>pip install requests</i><br>
-<i>pip install matplotlib</i>
+```
+pip install requests
+pip install matplotlib
+```
 
  
-3. Get yourself an application ID from wargaming.
+3. Get yourself an application ID from wargaming. (optional)
 
 Go to https://developers.wargaming.net/applications sign in, and create a new server application. Provide your external IP address i.e. what www.whatsmyip.org tells you, not your machine's LAN address.
 
@@ -35,13 +37,25 @@ Download https://github.com/B...hive/master.zip and unpack to a directory of y
 
 In a Cmd or Powershell terminal, navigate to the directory where the unpacked code is
 
- <i>cd C:\full\path\to\containing\directory</i>
+```cd C:\full\path\to\containing\directory```
 
- Then run the code. Use the application ID you generated earlier.
+ Then run the code.
 
- <i>python replay_analyser.py C:\Games\World_of_Tanks\replays APPLICATION_ID_HERE</i>
+```bash
+usage: replay_analyser.py [-h] [-w] [-k KEY] dir [dir ...]
+
+A tool to analyse replays.
+
+positional arguments:
+  dir                path to directory(s) containing replays
+
+optional arguments:
+  -h, --help         show this help message and exit
+  -w, --weighted     Weight player ratings by position on team
+  -k KEY, --key KEY  application id (key) from
+                     https://developers.wargaming.net/applications/ (optional)
+```
 
 
 It creates a cache.csv file so if you need to stop it, the results it has already fetched from WG will not need to be fetched again and you can re-run or continue from where you left off. 
 
-plotter.py is still a work in progress. invoked the same way, it provides a .csv containing the average rating for each team for each replay.

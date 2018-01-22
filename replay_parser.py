@@ -5,8 +5,8 @@ import glob
 
 
 class ReplayParser:
-    def __init__(self, directory, over_writer):
-        self.directory = directory
+    def __init__(self, directorys, over_writer):
+        self.directorys = directorys
         self.ow = over_writer
         self.replays = []
 
@@ -45,12 +45,13 @@ class ReplayParser:
         return data
 
     def read_replays(self):
-        files = glob.glob(self.directory + os.path.sep + '*wotreplay')
-        for i, replay in enumerate(files):
-            if replay in ['replay_last_battle.wotreplay', 'temp.wotreplay']:
-                continue
-            self.ow.print(f'{i+1}/{len(files)} - {replay}')
-            json_data = self._load_json_from_replay(replay)
-            if json_data:
-                self.replays.append(json_data)
+        for directory in self.directorys:
+            files = glob.glob(directory + os.path.sep + '*wotreplay')
+            for i, replay in enumerate(files):
+                if replay in ['replay_last_battle.wotreplay', 'temp.wotreplay']:
+                    continue
+                self.ow.print(f'{i+1}/{len(files)} - {replay}')
+                json_data = self._load_json_from_replay(replay)
+                if json_data:
+                    self.replays.append(json_data)
         return self.replays

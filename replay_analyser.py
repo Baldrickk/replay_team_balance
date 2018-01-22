@@ -1,14 +1,35 @@
 #!/usr/bin/python3
-from utils import OverWriter as OW
-from replay_parser import ReplayParser as RP
+from utils import OverWriter as Ow
+from replay_parser import ReplayParser as Rp
 from api import API
-from cache import PlayerCache as PC
+from cache import PlayerCache as Pc
 from statistics import mean, pstdev
-from collections import defaultdict
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 import numpy as np
 import sys
+import argparse
+
+# import code
+
+"""global variables"""
+args = None
+
+
+def parse_input_args():
+    global args
+    parser = argparse.ArgumentParser(description='A tool to analyse replays.')
+    parser.add_argument('dirs', metavar='dir', type=str, nargs='+',
+                        help='path to directory(s) containing replays')
+    parser.add_argument('-w', '--weighted', dest="weighted", action='store_true',
+                        help='Weight player ratings by position on team')
+    """parser.add_argument('--output', metavar='OUTPUT', type=str,
+                        help="specify a particular output. Default is to output all\n"
+                             "options are: 'all', 'rating_scatter', 'rating_histogram', 'result_histogram'")"""
+    parser.add_argument('-k', '--key', type=str,
+                        default='48cef51dca87be6a244bd55566907d56',
+                        help="application id (key) from https://developers.wargaming.net/applications/ (optional)")
+    args = parser.parse_args()
 
 
 def names_ids_to_get(replays, cache):
@@ -43,13 +64,32 @@ def cache_players(replays, cache, api):
             cache.add_to_cache({'nickname': name, 'id': None, 'global_rating': None})
 
 
-def team_average_ratings(replays, cache):
+def weighted_team_rating(teams, replay_team):
+    top_tier = max(tier for team in teams for rating, tier in team)
+    return ({'green team': mean(rating * 1. / (1 + top_tier - tier)
+                                for rating, tier in teams[replay_team]),
+             'red team': mean(rating * 1. / (1 + top_tier - tier)
+                              for rating, tier in teams[1 - replay_team])})
+
+
+def team_rating(teams, replay_team):
+    return ({'green team': mean(rating for rating, tier in teams[replay_team]),
+             'red team': mean(rating for rating, tier in teams[1 - replay_team])})
+
+
+def team_average_ratings(replays, cache, tank_info=None):
+    global args
+    if tank_info is None:
+        tank_info = {}
     team_ratings = []
+    replay_team = None
     for battle in replays:
         teams = [[], []]
         std = battle.get('std')
         for player in std.get('vehicles').values():
             name = player.get('name')
+            tank = player.get('vehicleType').split(':', 1)[1]
+            tier = tank_info.get(tank, {}).get('tier')
             cached_player = cache.cached_record(name)
             if cached_player and cached_player.get('global_rating'):
                 rating = float(cached_player.get('global_rating'))
@@ -58,9 +98,10 @@ def team_average_ratings(replays, cache):
                     # note player's team and eliminate them from the calculation
                     replay_team = team_num
                 else:
-                    teams[team_num].append(rating)
-        team_ratings.append({'green team': mean(teams[replay_team]),
-                             'red team': mean(teams[1 - replay_team])})
+                    teams[team_num].append((rating, tier))
+
+        func = weighted_team_rating if tank_info and args.weighted else team_rating
+        team_ratings.append(func(teams, replay_team))
     return team_ratings
 
 
@@ -108,11 +149,17 @@ def output_rating_histogram(team_ratings):
                      'Histogram of team rating differences')
 
 
-def output_histogram(data, min, max, bin_size, xlabel, ylabel, title):
+def output_histogram(data, minval, maxval, bin_size, xlabel, ylabel, title):
+    maxval += 1
     sigma = pstdev(data)
     mu = mean(data)
-    plt.hist(data, range(min, max+1, bin_size), rwidth=0.9, normed=True)
-    plt.plot(range(min, max+1), mlab.normpdf(np.array(range(min, max+1)), mu, sigma), '--')
+    plt.hist(data,
+             range(minval, maxval, bin_size),
+             rwidth=0.9,
+             normed=True)
+    plt.plot(range(minval, maxval),
+             mlab.normpdf(np.array(range(minval, maxval)), mu, sigma),
+             '--')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
@@ -155,17 +202,15 @@ def outputs(replays, team_ratings):
 
 
 def main():
-    if len(sys.argv) < 2:
-        print('Usage = replay_analyser.py replay_path [application_id]')
-        exit()
-    replay_dir = sys.argv[1]
-    api_key = sys.argv[2] if len(sys.argv) >= 3 else '48cef51dca87be6a244bd55566907d56'
-    with OW(sys.stderr) as ow, PC('cache.csv', ['nickname', 'id', 'global_rating']) as cache:
-        rp = RP(replay_dir, ow)
-        a = API(api_key, ow)
+    global args
+    parse_input_args()
+    with Ow(sys.stderr) as ow, Pc('cache.csv', ['nickname', 'id', 'global_rating']) as cache:
+        rp = Rp(args.dirs, ow)
+        a = API(args.key, ow)
         replays = rp.read_replays()
         cache_players(replays, cache, a)
-        team_ratings = team_average_ratings(replays, cache)
+        tank_info = a.tank_tiers() if args.weighted else None
+        team_ratings = team_average_ratings(replays, cache, tank_info)
     outputs(replays, team_ratings)
 
 
