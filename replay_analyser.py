@@ -66,10 +66,9 @@ def cache_players(replays, cache, api):
 
 def weighted_team_rating(teams, replay_team):
     top_tier = max(tier for team in teams for rating, tier in team)
-    return ({'green team': mean(rating * 1. / (1 + top_tier - tier)
-                                for rating, tier in teams[replay_team]),
-             'red team': mean(rating * 1. / (1 + top_tier - tier)
-                              for rating, tier in teams[1 - replay_team])})
+    weights = [1., 1./2, 1./3]
+    return {'green team': mean(rating * weights[top_tier - tier] for rating, tier in teams[replay_team]),
+            'red team': mean(rating * weights[top_tier - tier] for rating, tier in teams[1 - replay_team])}
 
 
 def team_rating(teams, replay_team):
@@ -149,10 +148,19 @@ def output_rating_histogram(team_ratings):
                      'Histogram of team rating differences')
 
 
-def output_histogram(data, minval, maxval, bin_size, xlabel, ylabel, title):
+def output_all_team_ratings(team_ratings):
+    data = [r for team_r in team_ratings for r in team_r.values()]
+    output_histogram(data, int(min(data)), int(max(data)), 100,
+                     'team average rating',
+                     'frequency',
+                     'All teams rating distribution')
+
+
+def output_histogram(data, minval, maxval, bin_size, xlabel='', ylabel='', title=''):
     maxval += 1
     sigma = pstdev(data)
     mu = mean(data)
+    print(f'{title}: μ={mu:.6} σ={sigma:.6}')
     plt.hist(data,
              range(minval, maxval, bin_size),
              rwidth=0.9,
@@ -163,6 +171,18 @@ def output_histogram(data, minval, maxval, bin_size, xlabel, ylabel, title):
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
+    plt.show()
+
+
+def output_pc_diff_per_battle(team_ratings):
+    ys = [0.]
+    for i, battle in enumerate(team_ratings):
+        ys.append((percent_diff(battle.get('green team'), battle.get('red team')) + ys[-1])/(i+1))
+    plt.plot(range(len(ys)), ys)
+    plt.xlabel('battle count')
+    plt.ylabel('cumulative % difference per battle')
+    plt.title('Percentage difference over time')
+    plt.grid()
     plt.show()
 
 
@@ -199,6 +219,8 @@ def outputs(replays, team_ratings):
     output_xy(replays, team_ratings)
     output_rating_histogram(team_ratings)
     output_score_histogram(replays)
+    output_pc_diff_per_battle(team_ratings)
+    output_all_team_ratings(team_ratings)
 
 
 def main():
