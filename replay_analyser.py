@@ -148,7 +148,7 @@ def output_rating_histogram(team_ratings):
                      'Histogram of team rating differences')
 
 
-def output_all_team_ratings(team_ratings):
+def output_team_ratings(team_ratings):
     data = [r for team_r in team_ratings for r in team_r.values()]
     output_histogram(data, int(min(data)), int(max(data)), 100,
                      'team average rating',
@@ -212,7 +212,7 @@ def team_averages(team_ratings):
           f'Percentage difference:\n\t\t\t{percent_diff(g, r):+.3}%')
 
 
-def output_all_player_ratings(cache):
+def output_player_ratings(cache):
     all_player_ratings = [int(player.get('global_rating')) for player in cache.data.values() if
                           int(player.get('global_rating')) > 100]
     output_histogram(all_player_ratings,
@@ -232,8 +232,8 @@ def outputs(replays, team_ratings, cache):
     output_rating_histogram(team_ratings)
     output_score_histogram(replays)
     output_pc_diff_per_battle(team_ratings)
-    output_all_team_ratings(team_ratings)
-    output_all_player_ratings(cache)
+    output_team_ratings(team_ratings)
+    output_player_ratings(cache)
 
 
 def main():
