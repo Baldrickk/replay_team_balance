@@ -76,6 +76,23 @@ def team_rating(teams, replay_team):
              'red team': mean(rating for rating, tier in teams[1 - replay_team])})
 
 
+def custom_get_tank(tankName, tank_info):
+    tier = tank_info.get(tankName, {}).get('tier') # first try exact match
+    # if that fails try endswith matching
+    if tier is not None:
+        return tier
+
+    for tank in tank_info:
+        if (tank.endswith(tankName)):
+            return tank_info.get(tank).get('tier')
+
+    # exclude Haloween tanks
+    if not (tankName=="F77_FCM_2C_HE2017" or tankName=="F80_FCM_F1_Mle1940_HE2017"):
+        # if that fails, output the missing tank info, so it can be added
+        print(f'Missing tank info: {tankName}')
+    return None
+
+
 def team_average_ratings(replays, cache, tank_info=None):
     global args
     if tank_info is None:
@@ -85,10 +102,15 @@ def team_average_ratings(replays, cache, tank_info=None):
     for battle in replays:
         teams = [[], []]
         std = battle.get('std')
+        skipReplay = None
         for player in std.get('vehicles').values():
             name = player.get('name')
             tank = player.get('vehicleType').split(':', 1)[1]
-            tier = tank_info.get(tank, {}).get('tier')
+            tier = custom_get_tank(tank, tank_info)
+            if tier is None and args.weighted:
+                skipReplay = True
+                break
+
             cached_player = cache.cached_record(name)
             if cached_player and cached_player.get('global_rating'):
                 rating = float(cached_player.get('global_rating'))
@@ -99,6 +121,8 @@ def team_average_ratings(replays, cache, tank_info=None):
                 else:
                     teams[team_num].append((rating, tier))
 
+        if skipReplay:
+            break
         func = weighted_team_rating if tank_info and args.weighted else team_rating
         team_ratings.append(func(teams, replay_team))
     return team_ratings
