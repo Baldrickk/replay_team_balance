@@ -212,7 +212,19 @@ def team_averages(team_ratings):
           f'Percentage difference:\n\t\t\t{percent_diff(g, r):+.3}%')
 
 
-def outputs(replays, team_ratings):
+def output_all_player_ratings(cache):
+    all_player_ratings = [int(player.get('global_rating')) for player in cache.data.values() if
+                          int(player.get('global_rating')) > 100]
+    output_histogram(all_player_ratings,
+                     int(min(all_player_ratings)),
+                     int(max(all_player_ratings)),
+                     100,
+                     'player rating',
+                     'frequency',
+                     'Histogram of all players > 100 rating')
+
+
+def outputs(replays, team_ratings, cache):
     if not replays:
         return
     team_averages(team_ratings)
@@ -221,6 +233,7 @@ def outputs(replays, team_ratings):
     output_score_histogram(replays)
     output_pc_diff_per_battle(team_ratings)
     output_all_team_ratings(team_ratings)
+    output_all_player_ratings(cache)
 
 
 def main():
@@ -233,7 +246,7 @@ def main():
         cache_players(replays, cache, a)
         tank_info = a.tank_tiers() if args.weighted else None
         team_ratings = team_average_ratings(replays, cache, tank_info)
-    outputs(replays, team_ratings)
+        outputs(replays, team_ratings, cache)
 
 
 if __name__ == "__main__":
