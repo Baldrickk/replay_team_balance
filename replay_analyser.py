@@ -76,6 +76,14 @@ def team_rating(teams, replay_team):
              'red team': mean(rating for rating, tier in teams[1 - replay_team])})
 
 
+def tank_tier(vehicle_type, tank_info):
+    tank_name = vehicle_type.split(':', 1)[1]
+    tier = tank_info.get(tank_name, {}).get('tier')
+    if not tier:
+        print(f'Missing tank info: {tank_name}')
+    return tier
+
+
 def team_average_ratings(replays, cache, tank_info=None):
     global args
     if tank_info is None:
@@ -87,8 +95,7 @@ def team_average_ratings(replays, cache, tank_info=None):
         std = battle.get('std')
         for player in std.get('vehicles').values():
             name = player.get('name')
-            tank = player.get('vehicleType').split(':', 1)[1]
-            tier = tank_info.get(tank, {}).get('tier')
+            tier = tank_tier(player.get('vehicleType'), tank_info)
             cached_player = cache.cached_record(name)
             if cached_player and cached_player.get('global_rating'):
                 rating = float(cached_player.get('global_rating'))
