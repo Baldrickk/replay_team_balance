@@ -50,7 +50,7 @@ class ReplayParser:
         for directory in self.directorys:
             files = glob.glob(directory + os.path.sep + '*wotreplay')
             for i, replay in enumerate(files):
-                if replay.rsplit (os.path.sep, 1)[-1] in ('replay_last_battle.wotreplay', 'temp.wotreplay'):
+                if replay.rsplit(os.path.sep, 1)[-1] in ('replay_last_battle.wotreplay', 'temp.wotreplay'):
                     continue
                 self.ow.print(f'{i+1}/{len(files)} - {replay}')
                 json_data = self._load_json_from_replay(replay)

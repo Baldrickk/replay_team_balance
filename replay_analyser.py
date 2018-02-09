@@ -77,6 +77,8 @@ def team_rating(teams, replay_team):
 
 
 def tank_tier(vehicle_type, tank_info):
+    if not tank_info:
+        return None
     tank_name = vehicle_type.split(':', 1)[1]
     tier = tank_info.get(tank_name, {}).get('tier')
     if not tier:
@@ -86,8 +88,6 @@ def tank_tier(vehicle_type, tank_info):
 
 def team_average_ratings(replays, cache, tank_info=None):
     global args
-    if tank_info is None:
-        tank_info = {}
     team_ratings = []
     replay_team = None
     for battle in replays:
@@ -221,6 +221,7 @@ def team_averages(team_ratings):
 
 def output_player_ratings(cache):
     all_player_ratings = [int(player.get('global_rating')) for player in cache.data.values() if
+                          player.get('global_rating') and
                           int(player.get('global_rating')) > 100]
     output_histogram(all_player_ratings,
                      int(min(all_player_ratings)),
