@@ -30,7 +30,7 @@ class API:
             page_number = json_data.get('meta').get('page')
             self.ow.print(f'Getting tank tiers, page {page_number}/{page_count}')
             page_number += 1
-            tank_dict = {tank_data.get('tag'):tank_data for tank_data in json_data.get('data').values()}
+            tank_dict = {tank_data.get('tag'): tank_data for tank_data in json_data.get('data').values()}
             tank_db.update(tank_dict)
         return tank_db
 
@@ -45,10 +45,14 @@ class API:
         acc_id = data.get('data')[0].get('account_id') if ok else 0
         return acc_id
 
+    def ids_from_names_generator(self, names):
+        for i, name in enumerate(names):
+            p_id = self.id_from_name(i+1, len(names), name)
+            if p_id:
+                yield p_id
+
     def ids_from_names(self, name_iter):
-        ids = (self.id_from_name(idx+1, len(name_iter), name)
-               for idx, name in enumerate(name_iter))
-        return ids
+        return self.ids_from_names_generator(name_iter)
 
     @staticmethod
     def grouper(iterable, n, fillvalue=None):
@@ -58,13 +62,15 @@ class API:
         return itertools.zip_longest(*args, fillvalue=fillvalue)
 
     def ratings_from_ids(self, id_iter):
+        count = 0
         for i, group in enumerate(self.grouper(id_iter, 100, '')):
             ids = ','.join(str(player_id) for player_id in group)
             url = ('https://api.worldoftanks.eu/wot/account/info/?'
                    f'application_id={self.application_id}&'
                    f'account_id={ids}&'
                    'fields=global_rating,nickname')
-            self.ow.print('Getting Player ratings')
+            count += 1
+            self.ow.print(f'Getting Player ratings - {count*100}')
             data = self.json_from_url(url)
             if not data.get('status') == 'ok':
                 continue
@@ -74,5 +80,3 @@ class API:
                         continue
                     player['id'] = player_id
                     yield player
-
-

@@ -5,8 +5,6 @@ class PlayerCache:
     def __init__(self, filename, field_names):
         self.filename = filename
         self.data = {}
-        self.names_to_id = set()
-        self.ids_to_stat = set()
         self.cache_handle = None
         self.key = field_names[0]
         self.field_names = field_names

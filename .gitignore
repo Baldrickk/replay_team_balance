@@ -4,3 +4,4 @@
 *.json
 *.png
 *.idea/*
+build/*

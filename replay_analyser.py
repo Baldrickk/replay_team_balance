@@ -40,7 +40,7 @@ def names_ids_to_get(replays, cache):
         extended = battle.get('ext')
         if extended and extended[0].get('players'):
             for player_id, player in extended[0].get('players').items():
-                if not cache.cached_record(player.get('name')):
+                if cache.cached_record(player.get('name')) is None:
                     ids_to_stat.add(player_id)
         elif standard:
             for player in standard.get('vehicles').values():
@@ -187,7 +187,7 @@ def output_pc_diff_per_battle(team_ratings):
         ys.append((percent_diff(battle.get('green team'), battle.get('red team')) + ys[-1])/(i+1))
     plt.plot(range(len(ys)), ys)
     plt.xlabel('battle count')
-    plt.ylabel('cumulative % difference per battle')
+    plt.ylabel('average % difference')
     plt.title('Percentage difference over time')
     plt.grid()
     plt.show()
@@ -235,6 +235,7 @@ def output_player_ratings(cache):
 def outputs(replays, team_ratings, cache):
     if not replays:
         return
+    print('')   # force a new line
     team_averages(team_ratings)
     output_xy(replays, team_ratings)
     output_rating_histogram(team_ratings)

@@ -21,30 +21,33 @@ class ReplayParser:
 
     def _load_json_from_replay(self, replay):
         with open(replay, 'rb') as r:
-            data = dict()
-            d = r.read(12)
-            # the first byte in a valid replay is always 0x12
-            if not d[0] == 0x12:
-                return None
-            parts = d[4]
-            json_data = self._extract_json_data(d[8:12], r)
-            if json_data:
-                data['std'] = json_data
-            else:
-                return None
-            # Some replays are bugged or don't work.
-            # Forcibly ignore them here
-            if (len(json_data.get('vehicles')) < 30 or               # not full team
-                    json_data.get('regionCode') == 'CT' or           # test server
-                    json_data.get('bootcampCtx') or                  # tutorial
-                    json_data.get('gameplayID') == 'sandbox' or      # proving grounds
-                    json_data.get('mapName') == '120_kharkiv_halloween'):       # Halloween 2017
-                return None
+            try:
+                data = dict()
+                d = r.read(12)
+                # the first byte in a valid replay is always 0x12
+                if not d[0] == 0x12:
+                    return None
+                parts = d[4]
+                json_data = self._extract_json_data(d[8:12], r)
+                if json_data:
+                    data['std'] = json_data
+                else:
+                    return None
+                # Some replays are bugged or don't work.
+                # Forcibly ignore them here
+                if (len(json_data.get('vehicles')) < 30 or               # not full team
+                        json_data.get('regionCode') == 'CT' or           # test server
+                        json_data.get('bootcampCtx') or                  # tutorial
+                        json_data.get('gameplayID') == 'sandbox' or      # proving grounds
+                        json_data.get('mapName') == '120_kharkiv_halloween'):       # Halloween 2017
+                    return None
 
-            if parts == 2:
-                d = r.read(4)
-                data['ext'] = self._extract_json_data(d[0:4], r)
-        return data
+                if parts == 2:
+                    d = r.read(4)
+                    data['ext'] = self._extract_json_data(d[0:4], r)
+                return data
+            except:
+                return None
 
     def read_replays(self):
         for directory in self.directorys:
