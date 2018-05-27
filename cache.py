@@ -26,9 +26,12 @@ class PlayerCache:
         self.close_cache()
 
     def add_to_cache(self, record):
-        if self.cache_handle and self.data.get(record.get(self.key)) is None:
-            self.writer.writerow(record)
-        self.data[record.get(self.key)] = record
+        existing = self.data.get(record.get(self.key),{})
+        a = all(str(existing.get(i)) == str(record.get(i)) for i in self.field_names)
+        if not a:
+            if self.cache_handle is not None:
+                self.writer.writerow(record)
+            self.data[record.get(self.key)] = record
 
     def cached_record(self, name):
         return self.data.get(name)
