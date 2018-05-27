@@ -28,8 +28,12 @@ def parse_input_args():
                              "options are: 'all', 'rating_scatter', 'rating_histogram', 'result_histogram'")"""
     parser.add_argument('-k', '--key', type=str,
                         default='48cef51dca87be6a244bd55566907d56',
+                        #default=None,
                         help="application id (key) from https://developers.wargaming.net/applications/ (optional)")
     args = parser.parse_args()
+    if args.key is None:
+      print('Error: Application ID (key) required')
+      exit()
 
 
 def names_ids_to_get(replays, cache):
@@ -38,14 +42,16 @@ def names_ids_to_get(replays, cache):
     for battle in replays:
         standard = battle.get('std')
         extended = battle.get('ext')
+        #if we have extended data, we have the player_id
         if extended and extended[0].get('players'):
             for player_id, player in extended[0].get('players').items():
                 if cache.cached_record(player.get('name')) is None:
                     ids_to_stat.add(player_id)
+        #otherwise, we have to find out the player_id
         elif standard:
             for player in standard.get('vehicles').values():
                 name = player.get('name')
-                if not cache.cached_record(name):
+                if cache.cached_record(name) is None:
                     names_to_id.add(name)
     return names_to_id, ids_to_stat
 
