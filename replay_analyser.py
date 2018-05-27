@@ -130,7 +130,7 @@ def result(replay):
     return 'unknown'
 
 
-def output_xy(replays, team_ratings):
+def output_xy_ratings(replays, team_ratings):
     plt.plot([0, 8000], [0, 8000], 'blue')
     # create array xs, ys, colours
     colours = {'win': 'green',
@@ -173,7 +173,7 @@ def output_histogram(data, minval, maxval, bin_size, xlabel='', ylabel='', title
     maxval += 1
     sigma = pstdev(data)
     mu = mean(data)
-    print(f'{title}: μ={mu:.6} σ={sigma:.6}')
+    print(f'{title}: μ={mu:.6f} σ={sigma:.6f}')
     plt.hist(data,
              range(minval, maxval, bin_size),
              rwidth=0.9,
@@ -186,6 +186,8 @@ def output_histogram(data, minval, maxval, bin_size, xlabel='', ylabel='', title
     plt.title(title)
     plt.show()
 
+def zero_index(one_indexed):
+    return one_indexed -1
 
 def output_pc_diff_per_battle(team_ratings):
     ys = [0.]
@@ -198,20 +200,25 @@ def output_pc_diff_per_battle(team_ratings):
     plt.grid()
     plt.show()
 
+def battle_score(battle):
+    player_team = None
+    team_score = [0, 0]
+    extended = battle.get('ext',[None])[0]
+    if extended is None:
+      return ([0,0],0) #really we need to ensure that this isn't referenced, but this will do for now #FIX_ME
+    for tank in extended.get('vehicles').values():
+        tank = tank[0]
+        alive = tank.get('health') > 0
+        if alive:
+            team = zero_index(tank.get('team'))
+            team_score[team] += 1
+    player_team = zero_index(extended.get('personal').get('avatar').get('team'))
+    return (team_score, player_team)
 
 def output_score_histogram(replays):
     results = []
     for battle in replays:
-        team_score = [0, 0]
-        extended = battle.get('ext')
-        if not extended:
-            continue
-        for tank in extended[0].get('vehicles').values():
-            tank = tank[0]
-            alive = tank.get('health') > 0
-            if alive:
-                team = tank.get('team') - 1
-                team_score[team] += 1
+        team_score, player_team = battle_score(battle)
         results.append(abs(team_score[1]-team_score[0]))
     output_histogram(results, 0, 15, 1, 'difference in score', 'count', 'Distribution of results')
 
@@ -237,15 +244,34 @@ def output_player_ratings(cache):
                      'frequency',
                      'Histogram of all players > 100 rating')
 
+def output_xy_rating_vs_score(replays, team_ratings):
+    #plt.plot([-8000,8000],[-16, 16], 'blue')
+    xs = [percent_diff(x.get('green team'), x.get('red team')) for x in team_ratings]
+    bs = (battle_score(y) for y in replays)
+    ys = [score[player_team] - score[1-player_team] for score, player_team in bs]
+    colours = {'win': 'green',
+           'loss': 'red',
+           'draw': 'orange',
+           'unknown': 'grey'}
+    plt.scatter(xs, ys,
+                color=[colours.get(result(replay)) for replay in replays],
+                marker='.', s=1,
+                label='green / red')
+    plt.xlabel('Rating: % difference')
+    plt.ylabel('Team score')
+    plt.title("Scores per team rating difference")
+    plt.show()
+
 
 def outputs(replays, team_ratings, cache):
     if not replays:
         return
     print('')   # force a new line
     team_averages(team_ratings)
-    output_xy(replays, team_ratings)
+    output_xy_ratings(replays, team_ratings)
     output_rating_histogram(team_ratings)
     output_score_histogram(replays)
+    output_xy_rating_vs_score(replays, team_ratings)
     output_pc_diff_per_battle(team_ratings)
     output_team_ratings(team_ratings)
     output_player_ratings(cache)
