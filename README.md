@@ -4,9 +4,8 @@ A tool to check the average WG ratings of your teams vs your enemies teams from 
 Usage guide:
 
 To run a .exe:
-  Go to <a href="https://github.com/Baldrickk/replay_team_balance/releases">releases</a> and download the latest version.
-
-To run the python code natively:
+<br>  Go to <a href="https://github.com/Baldrickk/replay_team_balance/releases">releases</a> and download the latest version.
+<p>To run the python code natively:
 
 1. Install python3:
 
