@@ -21,19 +21,19 @@ def parse_input_args():
     parser = argparse.ArgumentParser(description='A tool to analyse replays.')
     parser.add_argument('dirs', metavar='dir', type=str, nargs='+',
                         help='path to directory(s) containing replays')
-    parser.add_argument('-w', '--weighted', dest="weighted", action='store_true',
-                        help='Weight player ratings by position on team')
+    """parser.add_argument('-w', '--weighted', dest="weighted", action='store_true',
+                        help='Weight player ratings by position on team')"""
     """parser.add_argument('--output', metavar='OUTPUT', type=str,
                         help="specify a particular output. Default is to output all\n"
                              "options are: 'all', 'rating_scatter', 'rating_histogram', 'result_histogram'")"""
     parser.add_argument('-k', '--key', type=str,
                         default='48cef51dca87be6a244bd55566907d56',
-                        #default=None,
+                        # default=None,
                         help="application id (key) from https://developers.wargaming.net/applications/ (optional)")
     args = parser.parse_args()
     if args.key is None:
-      print('Error: Application ID (key) required')
-      exit()
+        print('Error: Application ID (key) required')
+        exit()
 
 
 def names_ids_to_get(replays, cache):
@@ -42,12 +42,12 @@ def names_ids_to_get(replays, cache):
     for battle in replays:
         standard = battle.get('std')
         extended = battle.get('ext')
-        #if we have extended data, we have the player_id
+        # if we have extended data, we have the player_id
         if extended and extended[0].get('players'):
             for player_id, player in extended[0].get('players').items():
                 if cache.cached_record(player.get('name')) is None:
                     ids_to_stat.add(player_id)
-        #otherwise, we have to find out the player_id
+        # otherwise, we have to find out the player_id
         elif standard:
             for player in standard.get('vehicles').values():
                 name = player.get('name')
@@ -133,14 +133,10 @@ def result(replay):
 def output_xy_ratings(replays, team_ratings):
     plt.plot([0, 8000], [0, 8000], 'blue')
     # create array xs, ys, colours
-    colours = {'win': 'green',
-               'loss': 'red',
-               'draw': 'orange',
-               'unknown': 'grey'}
 
     plt.scatter([x.get('red team') for x in team_ratings],
                 [y.get('green team') for y in team_ratings],
-                color=[colours.get(result(replay)) for replay in replays],
+                color=[battle_colours(replay) for replay in replays],
                 marker='.', s=1,
                 label='green / red')
     plt.xlabel('rating: red team')
@@ -150,7 +146,8 @@ def output_xy_ratings(replays, team_ratings):
 
 
 def percent_diff(a, b):
-    return 100*(float(a)-float(b))/float(a)
+    return 100*(a-b)/float(mean((a, b)))
+    # return 100*(float(a)-float(b))/float(a)
 
 
 def output_rating_histogram(team_ratings):
@@ -186,26 +183,49 @@ def output_histogram(data, minval, maxval, bin_size, xlabel='', ylabel='', title
     plt.title(title)
     plt.show()
 
-def zero_index(one_indexed):
-    return one_indexed -1
 
-def output_pc_diff_per_battle(team_ratings):
+def zero_index(one_indexed):
+    return one_indexed - 1
+
+
+def output_pc_diff_per_battle_avg(team_ratings):
     ys = [0.]
     for i, battle in enumerate(team_ratings):
         ys.append((percent_diff(battle.get('green team'), battle.get('red team')) + ys[-1])/(i+1))
     plt.plot(range(len(ys)), ys)
-    plt.xlabel('battle count')
-    plt.ylabel('average % difference')
-    plt.title('Percentage difference over time')
+    plt.xlabel('Battle Count')
+    plt.ylabel('Average % Difference')
+    plt.title('Average Percentage Difference over Time')
     plt.grid()
     plt.show()
+
+
+def output_pc_diff_per_battle_abs(replays, team_ratings):
+
+    ys = [percent_diff(battle.get('green team'), battle.get('red team')) for battle in team_ratings]
+
+    plt.plot(range(len(ys)), ys, linewidth=1)
+    plt.scatter(range(len(ys)),
+                ys,
+                color=[battle_colours(replay) for replay in replays],
+                marker='.', s=100,
+                label='green / red')
+
+    plt.xlabel('Battle')
+    plt.ylabel('% Difference')
+    plt.title('Percentage Difference per Battle')
+
+    plt.grid()
+    plt.show()
+
+
 
 def battle_score(battle):
     player_team = None
     team_score = [0, 0]
-    extended = battle.get('ext',[None])[0]
+    extended = battle.get('ext', [None])[0]
     if extended is None:
-      return ([0,0],0) #really we need to ensure that this isn't referenced, but this will do for now #FIX_ME
+        return [0, 0], 0  # really we need to ensure that this isn't referenced, but this will do for now #FIX_ME
     for tank in extended.get('vehicles').values():
         tank = tank[0]
         alive = tank.get('health') > 0
@@ -213,7 +233,8 @@ def battle_score(battle):
             team = zero_index(tank.get('team'))
             team_score[team] += 1
     player_team = zero_index(extended.get('personal').get('avatar').get('team'))
-    return (team_score, player_team)
+    return team_score, player_team
+
 
 def output_score_histogram(replays):
     results = []
@@ -244,17 +265,22 @@ def output_player_ratings(cache):
                      'frequency',
                      'Histogram of all players > 100 rating')
 
+
+def battle_colours(replay, colours={'win': 'green',
+                                    'loss': 'red',
+                                    'draw': 'orange',
+                                    'unknown': 'grey'}):
+    return colours.get(result(replay))
+
+
 def output_xy_rating_vs_score(replays, team_ratings):
-    #plt.plot([-8000,8000],[-16, 16], 'blue')
+    # plt.plot([-8000,8000],[-16, 16], 'blue')
     xs = [percent_diff(x.get('green team'), x.get('red team')) for x in team_ratings]
     bs = (battle_score(y) for y in replays)
     ys = [score[player_team] - score[1-player_team] for score, player_team in bs]
-    colours = {'win': 'green',
-           'loss': 'red',
-           'draw': 'orange',
-           'unknown': 'grey'}
+
     plt.scatter(xs, ys,
-                color=[colours.get(result(replay)) for replay in replays],
+                color=[battle_colours(replay) for replay in replays],
                 marker='.', s=1,
                 label='green / red')
     plt.xlabel('Rating: % difference')
@@ -272,7 +298,8 @@ def outputs(replays, team_ratings, cache):
     output_rating_histogram(team_ratings)
     output_score_histogram(replays)
     output_xy_rating_vs_score(replays, team_ratings)
-    output_pc_diff_per_battle(team_ratings)
+    output_pc_diff_per_battle_avg(team_ratings)
+    output_pc_diff_per_battle_abs(replays, team_ratings)
     output_team_ratings(team_ratings)
     output_player_ratings(cache)
 

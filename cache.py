@@ -44,5 +44,5 @@ class PlayerCache:
     def _write_clean_cache(self):
         with open(self.filename, 'w', newline='') as self.cache_handle:
             self.writer = csv.DictWriter(self.cache_handle, self.field_names)
-            for record in self.data.items():
+            for record in self.data.values():
                 self.writer.writerow(record)

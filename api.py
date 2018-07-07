@@ -1,34 +1,35 @@
 import itertools
 import json
 import requests
+from time import sleep
 from random import randint
 from concurrent.futures import as_completed as as_comp
 from concurrent.futures import ThreadPoolExecutor as tpe
+
 
 class API:
     def __init__(self, application_id, over_writer):
         self.application_id = application_id
         self.ow = over_writer
 
-    def requests_retry_session(self,
-      retries=10,
-      backoff_factor_min=10,
-      backoff_factor_max=20,
-      status_forcelist=(500, 502, 504),
-      session=None,
-  ):
-      session = session or requests.Session()
-      retry = requests.packages.urllib3.util.retry.Retry(
-          total=retries,
-          read=retries,
-          connect=retries,
-          backoff_factor=randint(backoff_factor_min, backoff_factor_max),
-          status_forcelist=status_forcelist,
-      )
-      adapter = requests.adapters.HTTPAdapter(max_retries=retry)
-      session.mount('http://', adapter)
-      session.mount('https://', adapter)
-      return session
+    @staticmethod
+    def requests_retry_session(retries=10,
+                               backoff_factor_min=10,
+                               backoff_factor_max=20,
+                               status_forcelist=(500, 502, 504),
+                               session=None):
+        session = session or requests.Session()
+        retry = requests.packages.urllib3.util.retry.Retry(
+            total=retries,
+            read=retries,
+            connect=retries,
+            backoff_factor=randint(backoff_factor_min, backoff_factor_max),
+            status_forcelist=status_forcelist,
+        )
+        adapter = requests.adapters.HTTPAdapter(max_retries=retry)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+        return session
 
     def json_from_url(self, url):
         return json.loads(self.requests_retry_session().get(url).text)
@@ -56,16 +57,26 @@ class API:
         return tank_db
 
     def id_from_name(self, idx, count, name):
-        #print (f'{idx} - {count} - {name}')
+        # print (f'{idx} - {count} - {name}')
         self.ow.print(f'Getting player ID: {idx}/{count}:{name}')
-        url = ('https://api.worldoftanks.eu/wot/account/list/?type=exact'
-               f'&application_id={self.application_id}'
-               f'&search={name}')
-        data = self.json_from_url(url)
-        ok = (data.get('status') == 'ok' and
-              data.get('meta').get('count') > 0)
-        acc_id = data.get('data')[0].get('account_id') if ok else 0
-        return acc_id
+        # We are probably going to run into a load of REQUEST_LIMIT_EXCEDED errors now that
+        # the rate has increased  Need to handle that.
+        retry = True
+        while retry:
+            url = ('https://api.worldoftanks.eu/wot/account/list/?type=exact'
+                   f'&application_id={self.application_id}'
+                   f'&search={name}')
+            data = self.json_from_url(url)
+            if data.get('status') == 'ok':
+                if data.get('meta').get('count') > 0:
+                    return data.get('data')[0].get('account_id')
+            elif data.get('status') == 'error' and data.get('error').get('code') == 407:
+                sleep(0.5)
+            else:
+                # we haven't found our player, and we have run into a different error.
+                # return an empty player
+                print (data)
+                return 0
 
     def ids_from_names_generator(self, names):
         for i, name in enumerate(names):
@@ -82,7 +93,7 @@ class API:
                     id = future.result()
                 except Exception as exc:
                     print(f'ID-ing {name} generated an exception: {exc}, retrying')
-                    #future_to_id[executor.submit(self.id_from_name, i, len(names), name)] = (i, name)
+                    # future_to_id[executor.submit(self.id_from_name, i, len(names), name)] = (i, name)
                 else:
                     yield id
 
@@ -117,11 +128,11 @@ class API:
                     yield player
 
     def r_from_id_url(self, group):
-      url = ('https://api.worldoftanks.eu/wot/account/info/?'
-            f'application_id={self.application_id}&'
-            f'account_id={",".join(str(player_id) for player_id in group)}'
-             '&fields=global_rating,nickname')
-      return url
+        url = ('https://api.worldoftanks.eu/wot/account/info/?'
+               f'application_id={self.application_id}&'
+               f'account_id={",".join(str(player_id) for player_id in group)}'
+               '&fields=global_rating,nickname')
+        return url
     
     def ratings_from_ids_2(self, id_iter):
         with tpe() as executor:
@@ -139,9 +150,9 @@ class API:
                 else:
                     r_data = ratings.get('data')
                     if r_data is not None:
-                      for player_id, player in r_data.items():
-                        if not player:
-                            continue
-                        player['id'] = player_id
-                        yield player
+                        for player_id, player in r_data.items():
+                            if not player:
+                                continue
+                            player['id'] = player_id
+                            yield player
 
