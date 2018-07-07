@@ -42,6 +42,6 @@ pip install matplotlib
 Either download <a href="https://github.com/Baldrickk/replay_team_balance/archive/master.zip">the latest .zip</a> and unpack to a directory of your choice, or clone the repo
 
 ###### 4.Run the code
-In a Cmd or Powershell terminal, navigate to the directory where the unpacked code is
+In a Cmd or Powershell terminal, navigate to the directory where the unpacked code is<br>
 ```cd C:\full\path\to\containing\directory```
- Then run the code.
+<br>Then run the code.
