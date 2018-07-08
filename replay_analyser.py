@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from utils import OverWriter as Ow
 from replay_parser import ReplayParser as Rp
+from collections import Counter
 from api import API
 from cache import PlayerCache as Pc
 from statistics import mean, pstdev
@@ -131,17 +132,19 @@ def result(replay):
 
 
 def output_xy_ratings(replays, team_ratings):
-    plt.plot([0, 8000], [0, 8000], 'blue')
+    fig = plt.figure()
+    ax = fig.add_subplot(111, aspect='equal')
+    ax.plot([0, 8000], [0, 8000], 'blue')
     # create array xs, ys, colours
 
-    plt.scatter([x.get('red team') for x in team_ratings],
-                [y.get('green team') for y in team_ratings],
-                color=[battle_colours(replay) for replay in replays],
-                marker='.', s=1,
-                label='green / red')
-    plt.xlabel('rating: red team')
-    plt.ylabel('rating: green team')
-    plt.title("Average team rating distribution")
+    ax.scatter([x.get('red team') for x in team_ratings],
+               [y.get('green team') for y in team_ratings],
+               color=[battle_colours(replay) for replay in replays],
+               marker='.', s=1,
+               label='green / red')
+    ax.set_xlabel('rating: red team')
+    ax.set_ylabel('rating: green team')
+    ax.set_title("Average team rating distribution")
     plt.show()
 
 
@@ -204,11 +207,11 @@ def output_pc_diff_per_battle_abs(replays, team_ratings):
 
     ys = [percent_diff(battle.get('green team'), battle.get('red team')) for battle in team_ratings]
 
-    plt.plot(range(len(ys)), ys, linewidth=1)
+    # plt.plot(range(len(ys)), ys, linewidth=1)
     plt.scatter(range(len(ys)),
                 ys,
                 color=[battle_colours(replay) for replay in replays],
-                marker='.', s=100,
+                marker='.', s=50,
                 label='green / red')
 
     plt.xlabel('Battle')
@@ -247,10 +250,14 @@ def output_score_histogram(replays):
 def team_averages(team_ratings):
     g = mean(t.get('green team') for t in team_ratings)
     r = mean(t.get('red team') for t in team_ratings)
+    c = Counter((t.get('green team') > t.get('red team') for t in team_ratings))
     print(f'Total replays:\n\t\t\t{len(team_ratings)}\n'
           f'Green team average rating:\n\t\t\t{g:.6}\n'
           f'Red team average rating:\n\t\t\t{r:.6}\n'
-          f'Percentage difference:\n\t\t\t{percent_diff(g, r):+.3}%')
+          f'Percentage difference:\n\t\t\t{percent_diff(g, r):+.3}%\n'
+          f'Stronger than enemy:\n\t\t\t{c.get(True)} battles\n'
+          f'Weaker than enemy:\n\t\t\t{c.get(False)} battles\n'
+          f'Percentage Stronger:\n\t\t\t{100*c.get(True)/len(team_ratings):+.3}%\n')
 
 
 def output_player_ratings(cache):
@@ -312,7 +319,7 @@ def main():
         a = API(args.key, ow)
         replays = rp.read_replays()
         cache_players(replays, cache, a)
-        tank_info = a.tank_tiers() if args.weighted else None
+        tank_info = None # = a.tank_tiers() if args.weighted else None
         team_ratings = team_average_ratings(replays, cache, tank_info)
         outputs(replays, team_ratings, cache)
 

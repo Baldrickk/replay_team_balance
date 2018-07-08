@@ -58,11 +58,11 @@ class API:
 
     def id_from_name(self, idx, count, name):
         # print (f'{idx} - {count} - {name}')
-        self.ow.print(f'Getting player ID: {idx}/{count}:{name}')
         # We are probably going to run into a load of REQUEST_LIMIT_EXCEDED errors now that
         # the rate has increased  Need to handle that.
         retry = True
         while retry:
+            self.ow.print(f'Getting player ID: {idx}/{count}:{name}')
             url = ('https://api.worldoftanks.eu/wot/account/list/?type=exact'
                    f'&application_id={self.application_id}'
                    f'&search={name}')
@@ -70,13 +70,16 @@ class API:
             if data.get('status') == 'ok':
                 if data.get('meta').get('count') > 0:
                     return data.get('data')[0].get('account_id')
+                else:
+                    retry = False
             elif data.get('status') == 'error' and data.get('error').get('code') == 407:
-                sleep(0.5)
+                sleep(randint(1, 5))
             else:
-                # we haven't found our player, and we have run into a different error.
-                # return an empty player
-                print (data)
-                return 0
+                retry = False
+        # we haven't found our player, and we have run into a different error.
+        # return an empty player
+        print(data)
+        return 0
 
     def ids_from_names_generator(self, names):
         for i, name in enumerate(names):
