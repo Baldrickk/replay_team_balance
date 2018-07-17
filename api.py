@@ -61,7 +61,9 @@ class API:
         # We are probably going to run into a load of REQUEST_LIMIT_EXCEDED errors now that
         # the rate has increased  Need to handle that.
         retry = True
+        timeout = 0
         while retry:
+            timeout = timeout + 1
             self.ow.print(f'Getting player ID: {idx}/{count}:{name}')
             url = ('https://api.worldoftanks.eu/wot/account/list/?type=exact'
                    f'&application_id={self.application_id}'
@@ -73,12 +75,12 @@ class API:
                 else:
                     retry = False
             elif data.get('status') == 'error' and data.get('error').get('code') == 407:
-                sleep(randint(1, 5))
+                sleep(randint(timeout + 1, timeout * 5))
             else:
                 retry = False
-        # we haven't found our player, and we have run into a different error.
-        # return an empty player
-        print(data)
+        # we haven't found our player, and we have run into a different problem.
+        # this is typically due to a player being renamed so not being findable
+        # return an empty player id
         return 0
 
     def ids_from_names_generator(self, names):
