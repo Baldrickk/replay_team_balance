@@ -1,5 +1,5 @@
 # replay_team_balance
-A tool to check the average WG ratings of your teams vs your enemies teams from World of Tanks
+A tool for checking the average WG ratings of your teams and enemies teams in    World of Tanks
 
 ### Usage guide:
 
@@ -20,7 +20,7 @@ optional arguments:
   -k KEY, --key KEY  application id (key) from
                      https://developers.wargaming.net/applications/ (optional)
 ```
-The program creates a cache.csv file so if you need to stop it, the results it has already fetched from WG will not need to be fetched again and you can re-run or continue from where you left off. 
+The program creates a cache.csv file so, if you need to stop it, WG results will not be fetched again. You can re-run or continue from where you left off. 
 
 ### To run a .exe:
 Go to <a href="https://github.com/Baldrickk/replay_team_balance/releases">releases</a> and download the latest version.<br>
@@ -29,7 +29,7 @@ The executable can be run from the command line (cmd or powershell).
 ### To run the python code natively:
 ###### 1. Install python3:
 https://www.python.org/ftp/python/3.6.4/python-3.6.4-amd64-webinstall.exe
-<br>When you install, ensure you select the "add to path" option (will be something like that) I think it is on the first page of the installer, otherwise you'll have to set it up manually, which is a pain.
+<br>When you install, ensure you select the "add to path" option (will be something like that). It should be on the first page of the installer, otherwise you'll have to set it up manually, which is a pain.
 
 ###### 2. Install the required libraries.
 Open a new Cmd or PowerShell window.
