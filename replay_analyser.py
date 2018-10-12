@@ -219,8 +219,12 @@ def output_pc_diff_per_battle_avg(team_ratings):
     global args
     title = 'Average Percentage Difference over Time'
     ys = [0.]
+    subsum = 0
     for i, battle in enumerate(team_ratings):
-        ys.append((percent_diff(battle.get('green team'), battle.get('red team')) + ys[-1])/(i+1))
+        pd = percent_diff(battle.get('green team'), battle.get('red team'))
+        subsum += pd
+        ys.append(subsum/(i+1))
+
     plt.plot(range(len(ys)), ys)
     plt.xlabel('Battle Count')
     plt.ylabel('Average % Difference')
