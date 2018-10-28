@@ -39,6 +39,8 @@ def parse_input_args():
                         default='48cef51dca87be6a244bd55566907d56',
                         # default=None,
                         help="application id (key) from https://developers.wargaming.net/applications/ (optional)")
+    parser.add_argument('-p', '--filter_platoons', action='store_true',
+                        help='remove battles where player was platooned from the analysed replays')
     args = parser.parse_args()
     if args.key is None:
         print('Error: Application ID (key) required')
@@ -87,21 +89,11 @@ def weighted_team_rating(teams, replay_team):
 
 
 def team_rating(teams, replay_team):
-    return ({'green team': mean(rating for rating, tier in teams[replay_team]),
-             'red team': mean(rating for rating, tier in teams[1 - replay_team])})
+    return ({'green team': mean(teams[replay_team]),
+             'red team': mean(teams[1 - replay_team])})
 
 
-def tank_tier(vehicle_type, tank_info):
-    if not tank_info:
-        return None
-    tank_name = vehicle_type.split(':', 1)[1]
-    tier = tank_info.get(tank_name, {}).get('tier')
-    if not tier:
-        print(f'Missing tank info: {tank_name}')
-    return tier
-
-
-def team_average_ratings(replays, cache, tank_info=None):
+def team_average_ratings(replays, cache):
     global args
     team_ratings = []
     replay_team = None
@@ -110,7 +102,6 @@ def team_average_ratings(replays, cache, tank_info=None):
         std = battle.get('std')
         for player in std.get('vehicles').values():
             name = player.get('name')
-            tier = tank_tier(player.get('vehicleType'), tank_info)
             cached_player = cache.cached_record(name)
             if cached_player and cached_player.get('global_rating'):
                 rating = float(cached_player.get('global_rating'))
@@ -119,10 +110,9 @@ def team_average_ratings(replays, cache, tank_info=None):
                     # note player's team and eliminate them from the calculation
                     replay_team = team_num
                 else:
-                    teams[team_num].append([rating, tier])
+                    teams[team_num].append(rating)
 
-        func = weighted_team_rating if tank_info and args.weighted else team_rating
-        team_ratings.append(func(teams, replay_team))
+        team_ratings.append(team_rating(teams, replay_team))
     return team_ratings
 
 
@@ -376,10 +366,9 @@ def main():
     with Ow(sys.stderr) as ow, Pc('cache.csv', ['nickname', 'id', 'global_rating']) as cache:
         rp = Rp(args.dirs, ow)
         a = API(args.key, ow)
-        replays = rp.read_replays()
+        replays = rp.read_replays(args.filter_platoons)
         cache_players(replays, cache, a)
-        tank_info = None # = a.tank_tiers() if args.weighted else None
-        team_ratings = team_average_ratings(replays, cache, tank_info)
+        team_ratings = team_average_ratings(replays, cache)
         outputs(replays, team_ratings, cache)
     if logfile:
         logfile.close()
