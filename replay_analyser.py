@@ -236,7 +236,7 @@ def output_pc_diff_per_battle_abs(replays, team_ratings):
     plt.scatter(range(len(ys)),
                 ys,
                 color=[battle_colours(replay) for replay in replays],
-                marker='.', s=50,
+                marker='.', s=5,
                 label='green / red')
 
     plt.xlabel('Battle')
