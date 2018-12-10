@@ -140,10 +140,11 @@ def output_xy_ratings(replays, team_ratings):
     
     ax.plot([0, max_num], [0, max_num], 'blue')
     # create array xs, ys, colours
-
+    colours = ['blue', 'green', 'gold', 'brown', 'red']
     title = "Average team rating distribution"
     ax.scatter(xs, ys,
-               color=[battle_colours(replay) for replay in replays],
+               color=[colours[r.get('std').get('tier') % 5] for r in replays],
+               # [battle_colours(replay) for replay in replays],
                marker='.', s=1,
                label='green / red')
     ax.set_xlabel('rating: red team')
@@ -330,8 +331,11 @@ def output_xy_rating_vs_score(replays, team_ratings):
         else:
             ys.append(0)
 
+    colours = ['blue', 'green', 'gold', 'brown', 'red']
+
     plt.scatter(xs, ys,
-                color=[battle_colours(replay) for replay in replays],
+                color=[colours[r.get('std').get('tier') % 5]for r in replays],
+                # [battle_colours(replay) for replay in replays],
                 marker='.', s=1,
                 label='green / red')
     plt.xlabel('Rating: % difference')
@@ -366,7 +370,8 @@ def main():
     with Ow(sys.stderr) as ow, Pc('cache.csv', ['nickname', 'id', 'global_rating']) as cache:
         rp = Rp(args.dirs, ow)
         a = API(args.key, ow)
-        replays = rp.read_replays(args.filter_platoons)
+        tank_info = a.tank_tiers()
+        replays = rp.read_replays(args.filter_platoons, tank_info)
         cache_players(replays, cache, a)
         team_ratings = team_average_ratings(replays, cache)
         outputs(replays, team_ratings, cache)

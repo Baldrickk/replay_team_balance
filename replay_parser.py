@@ -34,7 +34,17 @@ class ReplayParser:
                 return True
         return False
 
-    def _load_json_from_replay(self, replay, filter_platoons=False):
+    @staticmethod
+    def tank_tier(vehicle_type, tank_info):
+        if not tank_info:
+            return None
+        tank_name = vehicle_type.split(':', 1)[1]
+        tier = tank_info.get(tank_name, {}).get('tier')
+        if not tier:
+            print(f'Missing tank info: {tank_name}')
+        return tier
+
+    def _load_json_from_replay(self, replay, filter_platoons=False, tank_data = None):
         with open(replay, 'rb') as r:
             try:
                 data = dict()
@@ -68,11 +78,28 @@ class ReplayParser:
                 if filter_platoons and not self._toon_filter_good(data):
                     return None
 
+                # this is a TEMPORARY change that needs to be removed later
+                # this is a TEMPORARY change that needs to be removed later
+                # this is a TEMPORARY change that needs to be removed later
+                player_name = data['std'].get("playerName")
+                vehicles = data['std'].get('vehicles')
+                top_tier = 0
+                for vehicle in vehicles.values():
+                    vehicle_id = vehicle.get('vehicleType')
+                    tier = self.tank_tier(vehicle_id, tank_data)
+                    if tier > top_tier:
+                        top_tier = tier
+
+                data['std']['tier'] = top_tier
+                # this is a TEMPORARY change that needs to be removed later
+                # this is a TEMPORARY change that needs to be removed later
+                # this is a TEMPORARY change that needs to be removed later
+
                 return data
             except:
                 return None
 
-    def read_replays(self, filter_platoons=False):
+    def read_replays(self, filter_platoons=False, tankData=None):
         for replay_path in self.paths:
             if os.path.isfile(replay_path) and replay_path.endswith('ppr'):
                 with open(replay_path) as rp:
@@ -85,7 +112,7 @@ class ReplayParser:
                     if replay.rsplit(os.path.sep, 1)[-1] in ('replay_last_battle.wotreplay', 'temp.wotreplay'):
                         continue
                     self.ow.print(f'{i+1}/{len(files)} - {replay}')
-                    json_data = self._load_json_from_replay(replay, filter_platoons)
+                    json_data = self._load_json_from_replay(replay, filter_platoons, tankData)
                     if json_data:
                         self.replays.append(json_data)
         return self.replays

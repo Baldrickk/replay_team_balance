@@ -18,5 +18,57 @@
     "tier": 3,
     "tag": "PzIII_A",
     "short_name": "PzIII_A"
+  },
+  "M6":{
+    "tier":6,
+    "tag":"M6",
+    "short_name":"M6"},
+  "M4A3E8_Sherman"
+  :{"tier":6
+  ,"tag":"M4A3E8_Sherman"
+  ,"short_name":"M4A3E8_Sherman"
+  },
+  "B1"
+  :{"tier":4
+  ,"tag":"B1"
+  ,"short_name":"B1"
+  },
+  "T21"
+  :{"tier":6
+  ,"tag":"T21"
+  ,"short_name":"T21"
+  },
+  "M103"
+  :{"tier":9
+  ,"tag":"M103"
+  ,"short_name":"M103"
+  },
+  "M24_Chaffee"
+  :{"tier":10
+  ,"tag":"old_Chaffee"
+  ,"short_name":"Chaffee"
+  },
+  "Churchill_LL"
+  :{"tier":5
+  ,"tag":"Churchill III"
+  ,"short_name":"Churchill III"
+  },
+  "MT25"
+  :{"tier":6
+  ,"tag":"MT25"
+  ,"short_name":"MT25"
+  },
+  "M41_Bulldog"
+  :{"tier":7
+  ,"tag":"old_Bulldog"
+  ,"short_name":"Bulldog"
+  },
+  
+  "none"
+  :{"tier":0
+  ,"tag":""
+  ,"short_name":""
   }
+  
+  
 }
