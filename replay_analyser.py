@@ -10,6 +10,7 @@ import matplotlib.mlab as mlab
 import numpy as np
 import sys
 import argparse
+import csv
 
 # import code
 
@@ -28,10 +29,13 @@ def parse_input_args():
     """parser.add_argument('--output', metavar='OUTPUT', type=str,
                         help="specify a particular output. Default is to output all\n"
                              "options are: 'all', 'rating_scatter', 'rating_histogram', 'result_histogram'")"""
-    parser.add_argument('-s', '--save_img', type=str, default='', metavar='PREFIX',
-                        help='enable automatic saving of graphs as images in the current directory. '
-                             'file-names will be prefixed with PREFIX.')
-    parser.add_argument('-d', '--dpi', type=int, default=1000,
+    parser.add_argument('-o', '--output_name', type=str, default='', metavar='PREFIX',
+                        help='saved graph and csv files will be prefixed with PREFIX')
+    parser.add_argument('-s', '--save_img', action='store_true',
+                        help='enable automatic saving of graphs as images.')
+    parser.add_argument('-c', '--csv', action='store_true',
+                        help='enable saving of graph data as csv files')
+    parser.add_argument('-d', '--dpi', type=int, default=300,
                         help='set the DPI value for automatically saved images.  This scales the image. Default = 1000')
     parser.add_argument('-g', '--graphs_off', action='store_true',
                         help='Disable display of graph windows')
@@ -39,6 +43,8 @@ def parse_input_args():
                         default='48cef51dca87be6a244bd55566907d56',
                         # default=None,
                         help="application id (key) from https://developers.wargaming.net/applications/ (optional)")
+    parser.add_argument('-r', '--region', type=str, default='eu',
+                        help='set server region.  defaults to "eu" and can be one of [eu, us, ru, asia]')
     parser.add_argument('-p', '--filter_platoons', action='store_true',
                         help='remove battles where player was platooned from the analysed replays')
     args = parser.parse_args()
@@ -137,21 +143,30 @@ def output_xy_ratings(replays, team_ratings):
     xs = [x.get('red team') for x in team_ratings]
     ys = [y.get('green team') for y in team_ratings]
     max_num = max((max(xs), max(ys)))
+    colours = [battle_colours(replay) for replay in replays]
     
     ax.plot([0, max_num], [0, max_num], 'blue')
-    # create array xs, ys, colours
 
     title = "Average team rating distribution"
     ax.scatter(xs, ys,
-               color=[battle_colours(replay) for replay in replays],
+               color=colours,
                marker='.', s=1,
                label='green / red')
     ax.set_xlabel('rating: red team')
     ax.set_ylabel('rating: green team')
     ax.set_title(title)
+
+    filename = '_'.join((args.output_name, title))
+
+    if args.csv:
+        if args.csv:
+            with open(f'{filename}.csv', 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerows(zip(xs, ys, colours))
+
     if args.save_img:
-        plt.savefig(f'{args.save_img}_{title}.png', bbox_inches='tight', dpi=args.dpi)
-    # if not args.graphs_off:
+        plt.savefig(f'{filename}.png', bbox_inches='tight', dpi=args.dpi)
+
     plt.clf() if args.graphs_off else plt.show()
 
 
@@ -195,9 +210,18 @@ def output_histogram(data, minval, maxval, bin_size, xlabel='', ylabel='', title
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
+
+    filename = '_'.join((args.output_name, title))
+
+    if args.csv:
+        if args.csv:
+            with open(f'{filename}.csv', 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerows(zip(data, range(minval, maxval, bin_size)))
+
     if args.save_img:
-        plt.savefig(f'{args.save_img}_{title}.png', bbox_inches='tight', dpi=args.dpi)
-    # if not args.graphs_off:
+        plt.savefig(f'{filename}.png', bbox_inches='tight', dpi=args.dpi)
+
     plt.clf() if args.graphs_off else plt.show()
 
 
@@ -220,9 +244,18 @@ def output_pc_diff_per_battle_avg(team_ratings):
     plt.ylabel('Average % Difference')
     plt.title(title)
     plt.grid()
+
+    filename = '_'.join((args.output_name, title))
+
+    if args.csv:
+        if args.csv:
+            with open(f'{filename}.csv', 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerows(zip(range(len(ys)), ys))
+
     if args.save_img:
-        plt.savefig(f'{args.save_img}_{title}.png', bbox_inches='tight', dpi=args.dpi)
-    # if not args.graphs_off:
+        plt.savefig(f'{filename}.png', bbox_inches='tight', dpi=args.dpi)
+
     plt.clf() if args.graphs_off else plt.show()
 
 
@@ -231,11 +264,12 @@ def output_pc_diff_per_battle_abs(replays, team_ratings):
     title = 'Percentage Difference per Battle'
 
     ys = [percent_diff(battle.get('green team'), battle.get('red team')) for battle in team_ratings]
+    xs = range(len(ys))
 
-    # plt.plot(range(len(ys)), ys, linewidth=1)
-    plt.scatter(range(len(ys)),
+    colours = [battle_colours(replay) for replay in replays]
+    plt.scatter(xs,
                 ys,
-                color=[battle_colours(replay) for replay in replays],
+                color=colours,
                 marker='.', s=5,
                 label='green / red')
 
@@ -244,9 +278,17 @@ def output_pc_diff_per_battle_abs(replays, team_ratings):
     plt.title(title)
     plt.grid()
 
+    filename = '_'.join((args.output_name, title))
+
+    if args.csv:
+        if args.csv:
+            with open(f'{filename}.csv', 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerows(zip(xs, ys, colours))
+
     if args.save_img:
-        plt.savefig(f'{args.save_img}_{title}.png', bbox_inches='tight', dpi=args.dpi)
-    # if not args.graphs_off:
+        plt.savefig(f'{filename}.png', bbox_inches='tight', dpi=args.dpi)
+
     plt.clf() if args.graphs_off else plt.show()
 
 
@@ -330,16 +372,27 @@ def output_xy_rating_vs_score(replays, team_ratings):
         else:
             ys.append(0)
 
+    colours = [battle_colours(replay) for replay in replays]
+
     plt.scatter(xs, ys,
-                color=[battle_colours(replay) for replay in replays],
+                color=colours,
                 marker='.', s=1,
                 label='green / red')
     plt.xlabel('Rating: % difference')
     plt.ylabel('Team score')
     plt.title(title)
+
+    filename = '_'.join((args.output_name, title))
+
+    if args.csv:
+        if args.csv:
+            with open(f'{filename}.csv', 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerows(zip(xs, ys, colours))
+
     if args.save_img:
-        plt.savefig(f'{args.save_img}_{title}.png', bbox_inches='tight', dpi=args.dpi)
-    # if not args.graphs_off:
+        plt.savefig(f'{filename}.png', bbox_inches='tight', dpi=args.dpi)
+
     plt.clf() if args.graphs_off else plt.show()
 
 
@@ -365,7 +418,7 @@ def main():
         logfile = open(f'{args.save_img}.log', 'w', encoding='utf8')
     with Ow(sys.stderr) as ow, Pc('cache.csv', ['nickname', 'id', 'global_rating']) as cache:
         rp = Rp(args.dirs, ow)
-        a = API(args.key, ow)
+        a = API(args.key, ow, args.region)
         replays = rp.read_replays(args.filter_platoons)
         cache_players(replays, cache, a)
         team_ratings = team_average_ratings(replays, cache)

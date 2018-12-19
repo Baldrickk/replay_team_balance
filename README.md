@@ -8,17 +8,33 @@ Go to <a href="https://developers.wargaming.net/applications">the Wargaming Dev
 
 ###### Usage:
 ```bash
-usage: replay_analyser.py [-h] [-w] [-k KEY] dir [dir ...]
+usage: replay_analyser.py [-h] [-o PREFIX] [-s] [-c] [-d DPI] [-g] [-k KEY]
+                          [-r REGION] [-p]
+                          dir [dir ...]
 
 A tool to analyse replays.
 
 positional arguments:
-  dir                path to directory(s) containing replays
+  dir                   path to directory(s) containing replays
 
 optional arguments:
-  -h, --help         show this help message and exit
-  -k KEY, --key KEY  application id (key) from
-                     https://developers.wargaming.net/applications/ (optional)
+  -h, --help            show this help message and exit
+  -o PREFIX, --output_name PREFIX
+                        saved graph and csv files will be prefixed with PREFIX
+  -s, --save_img        enable automatic saving of graphs as images.
+  -c, --csv             enable saving of graph data as csv files
+  -d DPI, --dpi DPI     set the DPI value for automatically saved images. This
+                        scales the image. Default = 1000
+  -g, --graphs_off      Disable display of graph windows
+  -k KEY, --key KEY     application id (key) from
+                        https://developers.wargaming.net/applications/
+                        (optional)
+  -r REGION, --region REGION
+                        set server region. defaults to "eu" and can be one of
+                        [eu, us, ru, asia]
+  -p, --filter_platoons
+                        remove battles where player was platooned from the
+                        analysed replays
 ```
 The program creates a cache.csv file so, if you need to stop it, WG results will not be fetched again. You can re-run or continue from where you left off. 
 

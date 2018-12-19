@@ -8,9 +8,10 @@ from concurrent.futures import ThreadPoolExecutor as tpe
 
 
 class API:
-    def __init__(self, application_id, over_writer):
+    def __init__(self, application_id, over_writer, region):
         self.application_id = application_id
         self.ow = over_writer
+        self.region = region
 
     @staticmethod
     def requests_retry_session(retries=10,
@@ -37,7 +38,7 @@ class API:
     def tank_tiers(self):
         with open('missingtanks.json') as missing:
             tank_db = json.load(missing)
-        url_str = ('https://api.worldoftanks.eu/wot/encyclopedia/vehicles/?'
+        url_str = (f'https://api.worldoftanks.{self.region}/wot/encyclopedia/vehicles/?'
                    'application_id={}&'
                    'fields=type,short_name,tier,tag&'
                    'page_no={}')
@@ -65,7 +66,7 @@ class API:
         while retry:
             timeout = timeout + 1
             self.ow.print(f'Getting player ID: {idx}/{count}:{name}')
-            url = ('https://api.worldoftanks.eu/wot/account/list/?type=exact'
+            url = (f'https://api.worldoftanks.{self.region}/wot/account/list/?type=exact'
                    f'&application_id={self.application_id}'
                    f'&search={name}')
             data = self.json_from_url(url)
@@ -116,7 +117,7 @@ class API:
         count = 0
         for i, group in enumerate(self.grouper(id_iter, 100, '')):
             ids = ','.join(str(player_id) for player_id in group)
-            url = ('https://api.worldoftanks.eu/wot/account/info/?'
+            url = (f'https://api.worldoftanks.{self.region}/wot/account/info/?'
                    f'application_id={self.application_id}&'
                    f'account_id={ids}&'
                    'fields=global_rating,nickname')
@@ -133,7 +134,7 @@ class API:
                     yield player
 
     def r_from_id_url(self, group):
-        url = ('https://api.worldoftanks.eu/wot/account/info/?'
+        url = (f'https://api.worldoftanks.{self.region}/wot/account/info/?'
                f'application_id={self.application_id}&'
                f'account_id={",".join(str(player_id) for player_id in group)}'
                '&fields=global_rating,nickname')
