@@ -215,9 +215,16 @@ def output_histogram(data, minval, maxval, bin_size, xlabel='', ylabel='', title
 
     if args.csv:
         if args.csv:
+            bins = {v:0 for v in range(0, int((maxval - minval) / bin_size) + 1)}
+            for d in data:
+                zeroed = d - minval
+                i = int((zeroed - 1) / bin_size)
+                bins[i] += 1
+
+
             with open(f'{filename}.csv', 'w', newline='') as f:
                 writer = csv.writer(f)
-                writer.writerows(zip(data, range(minval, maxval, bin_size)))
+                writer.writerows(zip(range(minval, maxval, bin_size), bins.values()))
 
     if args.save_img:
         plt.savefig(f'{filename}.png', bbox_inches='tight', dpi=args.dpi)
