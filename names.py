@@ -1,17 +1,8 @@
 #!/usr/bin/python3
 from utils import OverWriter as Ow
 from replay_parser import ReplayParser as Rp
-from collections import Counter
-from api import API
-from cache import PlayerCache as Pc
-from statistics import mean, pstdev
-import matplotlib.pyplot as plt
-import matplotlib.mlab as mlab
-import numpy as np
 import sys
 import argparse
-from collections import defaultdict
-import csv
 
 def parse_input_args():
     global args

@@ -67,7 +67,7 @@ class ReplayParser:
                     valid_replay = True
                 if not valid_replay:
                     return False
-                    
+
 
                 if parts == 2:
                     d = r.read(4)
