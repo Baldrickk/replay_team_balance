@@ -335,7 +335,7 @@ def team_averages(team_ratings):
                         f'Percentage difference:\n\t\t\t{percent_diff(g, r):+.3}%',
                         f'Stronger than enemy:\n\t\t\t{c.get(True,0)} battles',
                         f'Weaker than enemy:\n\t\t\t{c.get(False)} battles',
-                        f'Percentage Stronger:\n\t\t\t{((100*c.get(True,0.0)/len(team_ratings)) -50):+.3}%'))
+                        f'Percentage Stronger:\n\t\t\t{((100*c.get(True,0.0)/len(team_ratings))):.3}%'))
     print(output)
     if logfile:
         logfile.write(output + '\n')

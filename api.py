@@ -120,7 +120,7 @@ class API:
             url = (f'https://api.worldoftanks.{self.region}/wot/account/info/?'
                    f'application_id={self.application_id}&'
                    f'account_id={ids}&'
-                   'fields=global_rating,nickname')
+                   'fields=global_rating, nickname') #, statistics.all.battles, statistics.all.wins')
             count += 1
             self.ow.print(f'Getting Player ratings - {count*100}')
             data = self.json_from_url(url)
@@ -128,9 +128,18 @@ class API:
                 continue
             else:
                 for player_id, player in data.get('data').items():
-                    if not player:
+                    if (not player_id or
+                        not player or
+                        not int(player.get('global_rating'))):
                         continue
-                    player['id'] = player_id
+                    #battles = int(player.get('statistics').get('all').get('battles'))
+                    #if battles == 0:
+                    #    continue
+                    #wins = int(player.get('statistics').get('all').get('wins'))
+                    player['id'] = int(player_id)
+                    #player['wr'] = float(wins) / float(battles)
+                    #player['battles'] = battles
+                    #player['wins'] = wins
                     yield player
 
     def r_from_id_url(self, group):

@@ -41,21 +41,33 @@ class ReplayParser:
                 d = r.read(12)
                 # the first byte in a valid replay is always 0x12
                 if not d[0] == 0x12:
+                    print(f'replay {replay} excluded due to "not a replay file"')
                     return None
                 parts = d[4]
                 json_data = self._extract_json_data(d[8:12], r)
                 if json_data:
                     data['std'] = json_data
                 else:
+                    print(f'replay {replay} excluded due to "unable to extract json data"')
                     return None
                 # Some replay types are bugged or don't work.
                 # Forcibly ignore them here
-                if (len(json_data.get('vehicles')) < 30 or               # not full team
-                        json_data.get('regionCode') == 'CT' or           # test server
-                        json_data.get('bootcampCtx') or                  # tutorial
-                        json_data.get('gameplayID') == 'sandbox' or      # proving grounds
-                        json_data.get('mapName') == '120_kharkiv_halloween'):       # Halloween 2017
-                    return None
+                valid_replay = False
+                if (len(json_data.get('vehicles'))) < 30:
+                    print(f'replay {replay} excluded due to "not full team"')
+                elif json_data.get('regionCode') == 'CT':
+                    print(f'replay {replay} excluded due to "test server"')
+                elif json_data.get('bootcampCtx'):
+                    print(f'replay {replay} excluded due to "tutorial"')
+                elif json_data.get('gameplayID') == 'sandbox':
+                    print(f'replay {replay} excluded due to "proving grounds"')
+                elif json_data.get('mapName') == '120_kharkiv_halloween':
+                    print(f'replay {replay} excluded due to "Halloween 2017"')
+                else:
+                    valid_replay = True
+                if not valid_replay:
+                    return False
+                    
 
                 if parts == 2:
                     d = r.read(4)
@@ -65,7 +77,10 @@ class ReplayParser:
                 # So check if the second part exists.
                 # If replay is incomplete or we are in a 'toon'
                 # don't provide data
+                # better to not include incomplete battles and
+                # miss some good data, then include bad data
                 if filter_platoons and not self._toon_filter_good(data):
+                    print(f'replay {replay} excluded due to platoon filter')
                     return None
 
                 return data
