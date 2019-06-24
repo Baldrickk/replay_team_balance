@@ -129,8 +129,8 @@ class API:
             else:
                 for player_id, player in data.get('data').items():
                     if (not player_id or
-                        not player or
-                        not int(player.get('global_rating'))):
+                        not player): # or
+                        #not int(player.get('global_rating'))):
                         continue
                     #battles = int(player.get('statistics').get('all').get('battles'))
                     #if battles == 0:

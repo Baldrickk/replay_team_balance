@@ -39,33 +39,35 @@ class ReplayParser:
             try:
                 data = dict()
                 d = r.read(12)
+                message = ""
                 # the first byte in a valid replay is always 0x12
                 if not d[0] == 0x12:
-                    print(f'replay {replay} excluded due to "not a replay file"')
+                    message = ('replay excluded due to "not a replay file"')
                     return None
                 parts = d[4]
                 json_data = self._extract_json_data(d[8:12], r)
                 if json_data:
                     data['std'] = json_data
                 else:
-                    print(f'replay {replay} excluded due to "unable to extract json data"')
+                    message = ('replay excluded due to "unable to extract json data"')
                     return None
                 # Some replay types are bugged or don't work.
                 # Forcibly ignore them here
                 valid_replay = False
                 if (len(json_data.get('vehicles'))) < 30:
-                    print(f'replay {replay} excluded due to "not full team"')
+                    message = ('replay excluded due to "not full team"')
                 elif json_data.get('regionCode') == 'CT':
-                    print(f'replay {replay} excluded due to "test server"')
+                    message = ('replay excluded due to "test server"')
                 elif json_data.get('bootcampCtx'):
-                    print(f'replay {replay} excluded due to "tutorial"')
+                    message = ('replay excluded due to "tutorial"')
                 elif json_data.get('gameplayID') == 'sandbox':
-                    print(f'replay {replay} excluded due to "proving grounds"')
+                    message = ('replay excluded due to "proving grounds"')
                 elif json_data.get('mapName') == '120_kharkiv_halloween':
-                    print(f'replay {replay} excluded due to "Halloween 2017"')
+                    message = ('replay excluded due to "Halloween 2017"')
                 else:
                     valid_replay = True
                 if not valid_replay:
+                    print('\r\n'*2 + message)
                     return False
 
 
