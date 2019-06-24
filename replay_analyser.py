@@ -6,6 +6,7 @@ from api import API
 from cache import PlayerCache as Pc
 from statistics import mean, pstdev
 import matplotlib.pyplot as plt
+from scipy.stats import norm
 import matplotlib.mlab as mlab
 import numpy as np
 import sys
@@ -203,9 +204,9 @@ def output_histogram(data, minval, maxval, bin_size, xlabel='', ylabel='', title
     plt.hist(data,
              range(minval, maxval, bin_size),
              rwidth=0.9,
-             normed=True)
+             density=True)
     plt.plot(range(minval, maxval),
-             mlab.normpdf(np.array(range(minval, maxval)), mu, sigma),
+             norm.pdf(np.array(range(minval, maxval)), mu, sigma),
              '--')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -215,7 +216,7 @@ def output_histogram(data, minval, maxval, bin_size, xlabel='', ylabel='', title
 
     if args.csv:
         if args.csv:
-            bins = {v:0 for v in range(0, int((maxval - minval + 1) / bin_size) + 1)}
+            bins = {v: 0 for v in range(0, int((maxval - minval + 1) / bin_size) + 1)}
             for d in data:
                 zeroed = d - minval
                 i = int(zeroed / bin_size)
