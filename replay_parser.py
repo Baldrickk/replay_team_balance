@@ -1,3 +1,4 @@
+"""TODO: Module Docstring"""
 import json
 import os
 import struct
@@ -5,13 +6,16 @@ import glob
 
 
 class ReplayParser:
+    """TODO: Class Docstring"""
     def __init__(self, paths, over_writer):
+        """TODO: Method Docstring"""
         self.paths = paths
         self.ow = over_writer
         self.replays = []
 
     @staticmethod
     def _extract_json_data(bin_str, file_r):
+        """TODO: Method Docstring"""
         if len(bin_str) != 4:
             raise ValueError("bad binary string length")
         length = struct.unpack('<I', bin_str)[0]
@@ -19,13 +23,13 @@ class ReplayParser:
         data = json.loads(json_str)
         return data
 
-    '''
-    provide a True value if we can show that the player was not
-    in a platoon for the battle in question
-    otherwise, return False
-    '''
     @staticmethod
     def _toon_filter_good(replay_data):
+        """
+            provide a True value if we can show that the player was not
+            in a platoon for the battle in question
+            otherwise, return False
+            """
         if replay_data['ext']:
             player_id = replay_data['std'].get('playerID', {})
             player_data = replay_data['ext'][0].get('players',{}).get(str(player_id), {})
@@ -35,6 +39,7 @@ class ReplayParser:
         return False
 
     def _load_json_from_replay(self, replay, filter_platoons=False):
+        """TODO: Method Docstring"""
         with open(replay, 'rb') as r:
             try:
                 data = dict()
@@ -90,6 +95,7 @@ class ReplayParser:
                 return None
 
     def read_replays(self, filter_platoons=False):
+        """TODO: Method Docstring"""
         for replay_path in self.paths:
             if os.path.isfile(replay_path) and replay_path.endswith('ppr'):
                 with open(replay_path) as rp:
