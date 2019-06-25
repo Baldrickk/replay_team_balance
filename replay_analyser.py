@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+"""TODO: Module Docstring"""
 import sys
 import argparse
 import csv
@@ -23,6 +24,7 @@ LOGFILE = None
 
 
 def parse_input_args():
+    """TODO: Method Docstring"""
     global ARGS
     parser = argparse.ArgumentParser(
         description="A tool to analy_scoree replay_score.")
@@ -94,6 +96,7 @@ def parse_input_args():
 
 
 def names_ids_to_get(replay_score, cache):
+    """TODO: Method Docstring"""
     names_to_id = set()
     ids_to_stat = set()
     for battle in replay_score:
@@ -114,6 +117,7 @@ def names_ids_to_get(replay_score, cache):
 
 
 def cache_players(replay_score, cache, api):
+    """TODO: Method Docstring"""
     names_to_id, ids_to_stat = names_ids_to_get(replay_score, cache)
     query_pool = list()
     query_pool.append(api.ratings_from_ids(api.ids_from_names(names_to_id)))
@@ -129,6 +133,7 @@ def cache_players(replay_score, cache, api):
 
 
 def weighted_team_rating(teams, replay_team):
+    """TODO: Method Docstring"""
     top_tier = max(tier for team in teams for rating, tier in team)
     weights = [1.0, 1.0 / 2, 1.0 / 3]
     return {
@@ -142,6 +147,7 @@ def weighted_team_rating(teams, replay_team):
 
 
 def team_rating(teams, replay_team):
+    """TODO: Method Docstring"""
     return {
         "green team": mean(teams[replay_team]),
         "red team": mean(teams[1 - replay_team]),
@@ -149,6 +155,7 @@ def team_rating(teams, replay_team):
 
 
 def team_average_ratings(replay_score, cache):
+    """TODO: Method Docstring"""
     global ARGS
     team_ratings = []
     replay_team = None
@@ -172,6 +179,7 @@ def team_average_ratings(replay_score, cache):
 
 
 def result(replay):
+    """TODO: Method Docstring"""
     extended = replay.get("ext")
     if extended:
         for key, val in extended[0].get("personal").items():
@@ -185,6 +193,7 @@ def result(replay):
 
 
 def output_xy_ratings(replay_score, team_ratings):
+    """TODO: Method Docstring"""
     global ARGS
     fig = plt.figure()
     axis_x = fig.add_subplot(111, aspect="equal")
@@ -212,9 +221,11 @@ def output_xy_ratings(replay_score, team_ratings):
         plt.show()
 
 def percent_diff(param_a, param_b):
+    """TODO: Method Docstring"""
     return 100 * (param_a - param_b) / float(mean((param_a, param_b)))
 
 def output_rating_histogram(team_ratings):
+    """TODO: Method Docstring"""
     p_diffs = [
         percent_diff(param_b.get("green team"), param_b.get("red team")) for param_b in team_ratings
     ]
@@ -230,6 +241,7 @@ def output_rating_histogram(team_ratings):
 
 
 def output_team_ratings(team_ratings):
+    """TODO: Method Docstring"""
     data = [rating for team_r in team_ratings for rating in team_r.values()]
     output_histogram(
         data,
@@ -243,6 +255,7 @@ def output_team_ratings(team_ratings):
 
 
 def output_histogram(data, minval, maxval, bin_size, xlabel="", ylabel="", title=""):
+    """TODO: Method Docstring"""
     global ARGS
     maxval += 1
     sigma = pstdev(data)
@@ -287,10 +300,12 @@ def output_histogram(data, minval, maxval, bin_size, xlabel="", ylabel="", title
 
 
 def zero_index(one_indexed):
+    """TODO: Method Docstring"""
     return one_indexed - 1
 
 
 def output_pc_diff_per_battle_avg(team_ratings):
+    """TODO: Method Docstring"""
     global ARGS
     title = "Average Percentage Difference over Time"
     y_score = [0.0]
@@ -324,6 +339,7 @@ def output_pc_diff_per_battle_avg(team_ratings):
 
 
 def output_pc_diff_per_battle_abs(replay_score, team_ratings):
+    """TODO: Method Docstring"""
     global ARGS
     title = "Percentage Difference per Battle"
 
@@ -360,6 +376,7 @@ def output_pc_diff_per_battle_abs(replay_score, team_ratings):
 
 
 def battle_score(battle):
+    """TODO: Method Docstring"""
     team_score = [0, 0]
     extended = battle.get("ext", [None])[0]
     if extended is None:
@@ -377,6 +394,7 @@ def battle_score(battle):
 
 
 def output_score_histogram(replay_score):
+    """TODO: Method Docstring"""
     results = []
     for battle in replay_score:
         battle_score_var = battle_score(battle)
@@ -389,6 +407,7 @@ def output_score_histogram(replay_score):
 
 
 def team_averages(team_ratings):
+    """TODO: Method Docstring"""
     global LOGFILE
     green_avg = mean(t.get("green team") for t in team_ratings)
     red_avg = mean(t.get("red team") for t in team_ratings)
@@ -410,6 +429,7 @@ def team_averages(team_ratings):
 
 
 def output_player_ratings(cache):
+    """TODO: Method Docstring"""
     all_player_ratings = [
         int(player.get("global_rating"))
         for player in cache.data.values()
@@ -427,11 +447,13 @@ def output_player_ratings(cache):
 
 
 def battle_colours(replay, colours=None):
+    """TODO: Method Docstring"""
     if colours is None:
         colours = {"win": "green", "loss": "red", "draw": "orange", "unknown": "grey"}
     return colours.get(result(replay))
 
 def output_xy_rating_vs_score(replay_score, team_ratings):
+    """TODO: Method Docstring"""
     title = "Scores per team rating difference"
     # plt.plot([-8000,8000],[-16, 16], 'blue')
     # x_score = [percent_diff(x.get('green team'), x.get('red team')) for x in team_ratings]
@@ -475,6 +497,7 @@ def output_xy_rating_vs_score(replay_score, team_ratings):
 
 
 def outputs(replay_score, team_ratings, cache):
+    """TODO: Method Docstring"""
     if not replay_score:
         return
     print("")  # force param_a new line
@@ -490,6 +513,7 @@ def outputs(replay_score, team_ratings, cache):
 
 
 def main():
+    """TODO: Method Docstring"""
     global ARGS, LOGFILE
     parse_input_args()
     if ARGS.save_img:
