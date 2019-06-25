@@ -33,7 +33,7 @@ class ReplayParser:
         if replay_data['ext']:
             player_id = replay_data['std'].get('playerID', {})
             player_data = replay_data['ext'][0].get('players',{}).get(str(player_id), {})
-            pre_battle_id = player_data.get('prebattleID', 0)
+            pre_battle_id = player_data.get('pre-battleID', 0)
             if pre_battle_id == 0:
                 return True
         return False
@@ -47,28 +47,28 @@ class ReplayParser:
                 message = ""
                 # the first byte in a valid replay is always 0x12
                 if not d[0] == 0x12:
-                    message = ('replay excluded due to "not a replay file"')
+                    message = 'replay excluded due to "not a replay file"'
                     return None
                 parts = d[4]
                 json_data = self._extract_json_data(d[8:12], r)
                 if json_data:
                     data['std'] = json_data
                 else:
-                    message = ('replay excluded due to "unable to extract json data"')
+                    message = 'replay excluded due to "unable to extract json data"'
                     return None
                 # Some replay types are bugged or don't work.
                 # Forcibly ignore them here
                 valid_replay = False
                 if (len(json_data.get('vehicles'))) < 30:
-                    message = ('replay excluded due to "not full team"')
+                    message = 'replay excluded due to "not full team"'
                 elif json_data.get('regionCode') == 'CT':
-                    message = ('replay excluded due to "test server"')
+                    message = 'replay excluded due to "test server"'
                 elif json_data.get('bootcampCtx'):
-                    message = ('replay excluded due to "tutorial"')
+                    message = 'replay excluded due to "tutorial"'
                 elif json_data.get('gameplayID') == 'sandbox':
-                    message = ('replay excluded due to "proving grounds"')
+                    message = 'replay excluded due to "proving grounds"'
                 elif json_data.get('mapName') == '120_kharkiv_halloween':
-                    message = ('replay excluded due to "Halloween 2017"')
+                    message = 'replay excluded due to "Halloween 2017"'
                 else:
                     valid_replay = True
                 if not valid_replay:
