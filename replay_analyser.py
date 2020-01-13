@@ -7,7 +7,6 @@ from cache import PlayerCache as Pc
 from statistics import mean, pstdev
 import matplotlib.pyplot as plt
 from scipy.stats import norm
-import matplotlib.mlab as mlab
 import numpy as np
 import sys
 import argparse
@@ -107,17 +106,35 @@ def team_average_ratings(replays, cache):
     for battle in replays:
         teams = [[], []]
         std = battle.get('std')
+        platoon_id = std.get('platoon_id', 0)
+        ext = battle.get('ext')
         for player in std.get('vehicles').values():
             name = player.get('name')
+            team_num = player.get('team') - 1  # 1-indexed -> 0-indexed
+            # we only have a platoon id if eliminating platoons
+            if name == std.get('playerName'):
+                # note player's team and eliminate them from the calculation
+                replay_team = team_num
+                continue
+            if platoon_id:
+                session_id = str(player.get('avatarSessionID'))
+                ext0 = ext[0]
+                v = ext0.get('vehicles')
+                pd = v.get(session_id)
+                pd0 = pd[0]
+                user_id = str(pd0.get('accountDBID'))
+                # user_id = str(ext[0].get('vehicles').get(session_id)[0].get('AccountDBOD'))
+                players = ext0.get('players')
+                p = players.get(user_id)
+                player_platoon_id = p.get('prebattleID')
+                #player_platoon_id = ext[0].get('players').get(user_id).get('prebattleID')
+                if player_platoon_id == platoon_id:
+                    continue
+
             cached_player = cache.cached_record(name)
             if cached_player and cached_player.get('global_rating'):
                 rating = float(cached_player.get('global_rating'))
-                team_num = player.get('team') - 1  # 1-indexed -> 0-indexed
-                if name == std.get('playerName'):
-                    # note player's team and eliminate them from the calculation
-                    replay_team = team_num
-                else:
-                    teams[team_num].append(rating)
+                teams[team_num].append(rating)
 
         team_ratings.append(team_rating(teams, replay_team))
     return team_ratings
@@ -226,7 +243,6 @@ def output_histogram(data, minval, maxval, bin_size, xlabel='', ylabel='', title
                 writer = csv.writer(f)
                 writer.writerows(zip(range(minval, maxval, bin_size), bins.values()))
 
-	
     if args.save_img:
         plt.savefig(f'{filename}.png', bbox_inches='tight', dpi=args.dpi)
 
@@ -423,7 +439,7 @@ def main():
     global args, logfile
     parse_input_args()
     if args.save_img:
-        logfile = open(f'{args.save_img}.log', 'w', encoding='utf8')
+        logfile = open(f'{args.output_name}.log', 'w', encoding='utf8')
     with Ow(sys.stderr) as ow, Pc('cache.csv', ['nickname', 'id', 'global_rating']) as cache:
         rp = Rp(args.dirs, ow)
         a = API(args.key, ow, args.region)

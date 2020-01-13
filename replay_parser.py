@@ -25,14 +25,15 @@ class ReplayParser:
     otherwise, return False
     '''
     @staticmethod
-    def _toon_filter_good(replay_data):
-        if replay_data['ext']:
-            player_id = replay_data['std'].get('playerID', {})
-            player_data = replay_data['ext'][0].get('players',{}).get(str(player_id), {})
-            pre_battle_id = player_data.get('prebattleID', 0)
-            if pre_battle_id == 0:
-                return True
-        return False
+    def _toon_filter_id(replay_data):
+        std = replay_data.get('std')
+        ext = replay_data.get('ext')
+        if ext:
+            player_id = str(std.get('playerID', {}))
+            player_data = ext[0].get('players',{}).get(player_id, {})
+            toon_id = player_data.get('prebattleID', 0)
+            return toon_id
+        return None
 
     def _load_json_from_replay(self, replay, filter_platoons=False):
         with open(replay, 'rb') as r:
@@ -45,24 +46,24 @@ class ReplayParser:
                     message = ('replay excluded due to "not a replay file"')
                     return None
                 parts = d[4]
-                json_data = self._extract_json_data(d[8:12], r)
-                if json_data:
-                    data['std'] = json_data
+                std = self._extract_json_data(d[8:12], r)
+                if std:
+                    data['std'] = std
                 else:
                     message = ('replay excluded due to "unable to extract json data"')
                     return None
                 # Some replay types are bugged or don't work.
                 # Forcibly ignore them here
                 valid_replay = False
-                if (len(json_data.get('vehicles'))) < 30:
+                if (len(std.get('vehicles'))) < 30:
                     message = ('replay excluded due to "not full team"')
-                elif json_data.get('regionCode') == 'CT':
+                elif std.get('regionCode') == 'CT':
                     message = ('replay excluded due to "test server"')
-                elif json_data.get('bootcampCtx'):
+                elif std.get('bootcampCtx'):
                     message = ('replay excluded due to "tutorial"')
-                elif json_data.get('gameplayID') == 'sandbox':
+                elif std.get('gameplayID') == 'sandbox':
                     message = ('replay excluded due to "proving grounds"')
-                elif json_data.get('mapName') == '120_kharkiv_halloween':
+                elif std.get('mapName') == '120_kharkiv_halloween':
                     message = ('replay excluded due to "Halloween 2017"')
                 else:
                     valid_replay = True
@@ -70,10 +71,10 @@ class ReplayParser:
                     print('\r\n'*2 + message)
                     return False
 
-
                 if parts == 2:
                     d = r.read(4)
-                    data['ext'] = self._extract_json_data(d[0:4], r)
+                    ext = self._extract_json_data(d[0:4], r)
+                    data['ext'] = ext
 
                 # To detect platoons, we need both parts,
                 # So check if the second part exists.
@@ -81,12 +82,16 @@ class ReplayParser:
                 # don't provide data
                 # better to not include incomplete battles and
                 # miss some good data, then include bad data
-                if filter_platoons and not self._toon_filter_good(data):
-                    print(f'replay {replay} excluded due to platoon filter')
-                    return None
-
+                if filter_platoons:
+                    toon_id = self._toon_filter_id(data)
+                    # print(f'replay {replay} excluded due to platoon filter')
+                    if not toon_id:
+                        return None
+                    std['platoon_id'] = toon_id
                 return data
+
             except:
+                print(f'Could not open replay file: {replay}')
                 return None
 
     def read_replays(self, filter_platoons=False):
