@@ -68,7 +68,7 @@ class ReplayParser:
                 else:
                     valid_replay = True
                 if not valid_replay:
-                    print(message.join('\r\n'))
+                    print('\r\n'*2 + message)
                     return False
 
                 if parts == 2:
@@ -85,7 +85,7 @@ class ReplayParser:
                 if filter_platoons:
                     toon_id = self._toon_filter_id(data)
                     # print(f'replay {replay} excluded due to platoon filter')
-                    if toon_id is None:
+                    if not toon_id:
                         return None
                     std['platoon_id'] = toon_id
                 return data

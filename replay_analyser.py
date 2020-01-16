@@ -89,7 +89,7 @@ def cache_players(replays, cache, api):
 
 def weighted_team_rating(teams, replay_team):
     top_tier = max(tier for team in teams for rating, tier in team)
-    weights = [1., 1. / 2, 1. / 3]
+    weights = [1., 1./2, 1./3]
     return {'green team': mean(rating * weights[top_tier - tier] for rating, tier in teams[replay_team]),
             'red team': mean(rating * weights[top_tier - tier] for rating, tier in teams[1 - replay_team])}
 
@@ -109,9 +109,9 @@ def team_average_ratings(replays, cache):
         platoon_id = std.get('platoon_id', 0)
         ext = battle.get('ext')
 
-        if platoon_id and not ext:
+        if not ext and platoon_id:
+            # we only have a platoon id if eliminating platoons
             continue
-
         it = ext[0].get('players').values() if ext else std.get('vehicles').values()
         for player in it:
             name = player.get('name')
@@ -120,9 +120,10 @@ def team_average_ratings(replays, cache):
                 # note player's team and eliminate them from the calculation
                 replay_team = team_num
                 continue
-            if platoon_id and platoon_id == player.get('prebattleID'):
-                # ignore player if they are in the same platoon as the player
-                continue
+            if platoon_id:
+                player_platoon_id = player.get('prebattleID')
+                if player_platoon_id == platoon_id:
+                    continue
             cached_player = cache.cached_record(name)
             if cached_player and cached_player.get('global_rating'):
                 rating = float(cached_player.get('global_rating'))
@@ -149,12 +150,12 @@ def output_xy_ratings(replays, team_ratings):
     global args
     fig = plt.figure()
     ax = fig.add_subplot(111, aspect='equal')
-
+    
     xs = [x.get('red team') for x in team_ratings]
     ys = [y.get('green team') for y in team_ratings]
     max_num = max((max(xs), max(ys)))
     colours = [battle_colours(replay) for replay in replays]
-
+    
     ax.plot([0, max_num], [0, max_num], 'blue')
 
     title = "Average team rating distribution"
@@ -181,7 +182,7 @@ def output_xy_ratings(replays, team_ratings):
 
 
 def percent_diff(a, b):
-    return 100 * (a - b) / float(mean((a, b)))
+    return 100*(a-b)/float(mean((a, b)))
     # return 100*(float(a)-float(b))/float(a)
 
 
@@ -253,7 +254,7 @@ def output_pc_diff_per_battle_avg(team_ratings):
     for i, battle in enumerate(team_ratings):
         pd = percent_diff(battle.get('green team'), battle.get('red team'))
         subsum += pd
-        ys.append(subsum / (i + 1))
+        ys.append(subsum/(i+1))
 
     plt.plot(range(len(ys)), ys)
     plt.xlabel('Battle Count')
@@ -329,7 +330,7 @@ def output_score_histogram(replays):
         bs = battle_score(battle)
         if bs:
             team_score, player_team = bs
-            results.append(abs(team_score[1] - team_score[0]))
+            results.append(abs(team_score[1]-team_score[0]))
     output_histogram(results, 0, 15, 1, 'difference in score', 'count', 'Distribution of results')
 
 
@@ -360,7 +361,7 @@ def output_player_ratings(cache):
                      100,
                      'player rating',
                      'frequency',
-                     'Histogram of all players')  # > 100 rating')
+                     'Histogram of all players') # > 100 rating')
 
 
 def battle_colours(replay, colours={'win': 'green',
@@ -384,7 +385,7 @@ def output_xy_rating_vs_score(replays, team_ratings):
         bs = battle_score(r)
         if bs:
             score, player_team = bs
-            ys.append(score[player_team] - score[1 - player_team])
+            ys.append(score[player_team] - score[1-player_team])
         else:
             ys.append(0)
 
@@ -415,7 +416,7 @@ def output_xy_rating_vs_score(replays, team_ratings):
 def outputs(replays, team_ratings, cache):
     if not replays:
         return
-    print('')  # force a new line
+    print('')   # force a new line
     team_averages(team_ratings)
     output_xy_ratings(replays, team_ratings)
     output_rating_histogram(team_ratings)
