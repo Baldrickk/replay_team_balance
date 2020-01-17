@@ -68,7 +68,7 @@ class API:
             self.ow.print(f'Getting player ID: {idx}/{count}:{name}')
             url = (f'https://api.worldoftanks.{self.region}/wot/account/list/?type=exact'
                    f'&application_id={self.application_id}'
-                   f'&search={name}')
+                   f'&search={name[0:24]}')
             data = self.json_from_url(url)
             if data.get('status') == 'ok':
                 if data.get('meta').get('count') > 0:
